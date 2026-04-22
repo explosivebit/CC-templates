@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Секреты — никогда не коммитим
+.env
+.env.*
+*.key
+*.pem
+secrets/
+
+# Локальные переопределения Claude Code
+.claude/settings.local.json
+
+# Временные файлы
+/tmp/
+*.log
