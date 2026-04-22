@@ -15,7 +15,7 @@
 
 ## Скиллы (`skills/`)
 
-_Пока пусто. Шаблон и правила — `skills/README.md`._
+- [bootstrap-claude-project](skills/bootstrap-claude-project/SKILL.md) — разворачивает авторский стартовый скаффолд (CLAUDE.md + guides/) в новом или существующем проекте.
 
 ## Агенты (`agents/`)
 
@@ -39,4 +39,4 @@ _Пока пусто. Шаблон и правила — `snippets/README.md`._
 
 ## Скрипты (`scripts/`)
 
-_Пока пусто. Назначение и соглашения — `scripts/README.md`._
+- [install-skill.sh](scripts/install-skill.sh) — устанавливает skill в `~/.claude/skills/` (по умолчанию симлинк; флаги `--copy`, `--force`, `--dry-run`).
