@@ -38,21 +38,9 @@ _Пока пусто. Шаблон и правила — `agents/README.md`._
 
 ## Slash-команды (`commands/`)
 
-> ⚠️ **Все команды ниже — старые дубликаты одноимённых скиллов из `skills/`**
-> (срезы под gerts.ai до унификации skills/commands в Claude Code 2026).
-> Скиллы автоматически дают slash-команды — отдельные файлы здесь не нужны.
-> Будут удалены после переноса оставшейся универсальной логики в скиллы.
+В Claude Code 2026 скиллы и команды унифицированы — каждый скилл из `skills/` автоматически даёт `/<имя>` slash-команду. Поэтому отдельных файлов в `commands/` нет: всё перенесено в `skills/`.
 
-- [audit](commands/audit.md) — _дубль skill `audit`_, удалить после миграции.
-- [briefing](commands/briefing.md) — _дубль skill `briefing`_, удалить после миграции.
-- [build](commands/build.md) — _дубль skill `build`_, удалить после миграции.
-- [do](commands/do.md) — _дубль skill `do`_, удалить после миграции.
-- [recall](commands/recall.md) — _дубль skill `restore`_, удалить после миграции.
-- [research](commands/research.md) — _дубль skill `research`_, удалить после миграции.
-- [sprint](commands/sprint.md) — _дубль skill `sprint`_, удалить после миграции.
-- [team-up](commands/team-up.md) — _дубль skill `team`_, удалить после миграции.
-- [wave](commands/wave.md) — _часть skill `sprint`_ (lightweight mode), удалить после миграции.
-- [sprint-template](commands/sprint-template.md) — _не команда_, а reference-шаблон; будет перенесён в `skills/sprint/references/`.
+`commands/README.md` оставлен как guide на случай, если когда-либо понадобится добавить тонкую обёртку с аргументами/префиксами вокруг готового скилла.
 
 ## Промпты (`prompts/`)
 
