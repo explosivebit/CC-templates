@@ -7,7 +7,7 @@
 **Пользователь:**
 > Поставь мои гайды в этот проект.
 
-**Claude (через skill `bootstrap-claude-project`):**
+**Claude (через skill `bootstrap`):**
 
 ```
 Ориентация:

@@ -1,6 +1,6 @@
 ---
-name: bootstrap-claude-project
-description: Разворачивает авторский стартовый скаффолд Claude Code в новом или существующем проекте — создаёт CLAUDE.md по шаблону, папку guides/ с авторскими гайдами (Git Flow, CLAUDE.md best practices) и guides/INDEX.md. Используется, когда пользователь начинает новый проект и хочет поставить стандартную базу Claude Code, либо добавляет эти гайды в существующий проект. Триггеры (EN/RU) — "bootstrap project", "init claude baseline", "install my guides", "scaffold claude code", "поставь мои гайды", "разверни базу", "установи базовый CLAUDE.md", "подготовь проект под claude".
+name: bootstrap
+description: Разворачивает авторский стартовый скаффолд Claude Code в новом или существующем проекте — создаёт CLAUDE.md по шаблону, папку guides/ с авторскими гайдами (Git Flow, CLAUDE.md best practices) и guides/INDEX.md. Используется, когда пользователь начинает новый проект и хочет поставить стандартную базу Claude Code, либо добавляет эти гайды в существующий проект. Триггеры (EN/RU) — "bootstrap project", "init claude baseline", "install my guides", "scaffold claude code", "поставь мои гайды", "разверни базу", "установи базовый CLAUDE.md", "подготовь проект под claude", "засетапь проект".
 ---
 
 # Bootstrap Claude Project
@@ -11,7 +11,7 @@ description: Разворачивает авторский стартовый с
 Ресурсы skill'а живут рядом с этим SKILL.md, в `resources/`:
 
 ```
-~/.claude/skills/bootstrap-claude-project/
+~/.claude/skills/bootstrap/
 ├── SKILL.md           ← ты сейчас читаешь
 └── resources/
     ├── guides/
@@ -22,7 +22,7 @@ description: Разворачивает авторский стартовый с
         └── CLAUDE.md.template
 ```
 
-Если skill вызван из репо-источника (`CC-templates/skills/bootstrap-claude-project`),
+Если skill вызван из репо-источника (`CC-templates/skills/bootstrap`),
 пути тоже валидны относительно этой же директории — используй абсолютный путь до
 директории этого SKILL.md.
 
@@ -37,7 +37,7 @@ description: Разворачивает авторский стартовый с
 ## Когда НЕ использовать
 
 - Текущий cwd — это сам репозиторий `CC-templates` (он и есть источник, скаффолдить его не надо).
-  → Проверь по наличию файлов: `CLAUDE.md` + `skills/bootstrap-claude-project/` в cwd.
+  → Проверь по наличию файлов: `CLAUDE.md` + `skills/bootstrap/` в cwd.
 - В проекте уже есть `CLAUDE.md` **и** полная `guides/` — нечего делать.
   → Скажи пользователю и выйди.
 
@@ -71,7 +71,7 @@ test -d guides && echo "guides/ exists" || echo "no guides/"
 
 Проверки:
 - Если **нет `.git`** — предупреди пользователя: «гайды подразумевают git, рекомендую `git init -b main` перед продолжением». Спроси, продолжать ли без git.
-- Если cwd == корень `CC-templates` (признак: есть `skills/bootstrap-claude-project/SKILL.md`) — откажись с сообщением «это сам источник, скаффолдить его не нужно».
+- Если cwd == корень `CC-templates` (признак: есть `skills/bootstrap/SKILL.md`) — откажись с сообщением «это сам источник, скаффолдить его не нужно».
 
 ### 2. Собери план
 
@@ -91,11 +91,11 @@ Proceed? [y/n]
 
 **Резолвь абсолютный путь ресурсов.** Используй:
 ```bash
-SKILL_DIR="$HOME/.claude/skills/bootstrap-claude-project"
+SKILL_DIR="$HOME/.claude/skills/bootstrap"
 test -d "$SKILL_DIR/resources" || SKILL_DIR="<абсолютный путь до этого skill в CC-templates>"
 ```
 
-Если skill был установлен через симлинк на `CC-templates/skills/bootstrap-claude-project/`, `$HOME/.claude/skills/bootstrap-claude-project` сработает. Если skill запускается напрямую из репо (без установки) — используй абсолютный путь до папки, в которой лежит этот SKILL.md.
+Если skill был установлен через симлинк на `CC-templates/skills/bootstrap/`, `$HOME/.claude/skills/bootstrap` сработает. Если skill запускается напрямую из репо (без установки) — используй абсолютный путь до папки, в которой лежит этот SKILL.md.
 
 **Выполни операции по выбранному сценарию:**
 
@@ -149,7 +149,7 @@ test -d "$SKILL_DIR/resources" || SKILL_DIR="<абсолютный путь до
 
 | Симптом | Диагноз | Действие |
 |---|---|---|
-| `resources/` не найдена | Skill повреждён или не установлен | Сообщи путь, который пробовал, и попроси переустановить через `scripts/install-skill.sh bootstrap-claude-project`. |
+| `resources/` не найдена | Skill повреждён или не установлен | Сообщи путь, который пробовал, и попроси переустановить через `scripts/install-skill.sh bootstrap`. |
 | `guides/<file>.ru.md` уже существует | Идемпотентный повторный запуск | Покажи diff; по умолчанию skip. |
 | cwd — `CC-templates` | Запуск в самом источнике | Отказ с сообщением. |
 
