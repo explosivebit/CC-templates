@@ -1,62 +1,62 @@
 # commands/
 
-Slash-команды Claude Code. Каждая команда — один `.md` файл.
+Claude Code slash commands. Each command is a single `.md` file.
 
-Вызов в сессии: `/<command-name> <args>`.
+Invoke in a session: `/<command-name> <args>`.
 
 ---
 
-## Шаблон `<command-name>.md`
+## `<command-name>.md` template
 
 ```markdown
 ---
-description: Одна строка: что делает команда. Показывается в меню `/`.
-argument-hint: "<arg1> [arg2]"     # опционально: подсказка по аргументам
-allowed-tools: Read, Edit, Bash    # опционально: белый список инструментов
+description: One line: what the command does. Shown in the `/` menu.
+argument-hint: "<arg1> [arg2]"     # optional: argument hint
+allowed-tools: Read, Edit, Bash    # optional: tool whitelist
 ---
 
-# Инструкция для Claude
+# Instruction for Claude
 
-Тело команды — это **prompt**, который будет подставлен в разговор, когда
-пользователь введёт `/<command-name>`. Пиши в повелительном наклонении,
-адресуй Claude'у.
+The command body is a **prompt** that gets injected into the conversation
+when the user runs `/<command-name>`. Write in the imperative, addressed
+to Claude.
 
-Аргументы доступны как `$ARGUMENTS`, `$1`, `$2` и т.д.
+Arguments are available as `$ARGUMENTS`, `$1`, `$2`, etc.
 
-## Пример
+## Example
 
-1. Прочитай файл `$1`.
-2. Найди функции длиннее 50 строк.
-3. Предложи разбиение.
+1. Read file `$1`.
+2. Find functions longer than 50 lines.
+3. Suggest how to split them.
 ```
 
 ---
 
-## Правила
+## Rules
 
-- **Имя файла** = имя команды, `kebab-case`. Вызов: `/<имя-файла-без-.md>`.
-- Команды — это **шаблоны промптов**, не код. Не держи здесь bash-скрипты;
-  для них есть `scripts/`.
-- `description` — лаконично, до 80 символов; видно в попапе автодополнения.
-- Если команда делает многоэтапную работу и её сложно умещать в один
-  промпт — возможно, это лучше оформить как **агент** или **скилл**.
+- **File name** = command name, `kebab-case`. Invoke as `/<filename-without-.md>`.
+- Commands are **prompt templates**, not code. Don't keep bash scripts here;
+  those go in `scripts/`.
+- `description` — concise, under 80 characters; visible in autocomplete.
+- If a command does multistep work that won't fit in one prompt, consider
+  shaping it as an **agent** or **skill** instead.
 
-## Установка
+## Install
 
-Глобально:
+Globally:
 
 ```bash
 cp commands/<name>.md ~/.claude/commands/
 ```
 
-Для конкретного проекта:
+Per project:
 
 ```bash
 mkdir -p <project>/.claude/commands
 cp commands/<name>.md <project>/.claude/commands/
 ```
 
-## Добавил новую — не забудь
+## After adding one
 
-1. Обновить `INDEX.md` (секция «Slash-команды»).
-2. Коммит: `feat(commands): add /<command-name>`.
+1. Update `INDEX.md` (Slash commands section).
+2. Commit: `feat(commands): add /<command-name>`.

@@ -1,64 +1,64 @@
 # CC-templates
 
-Личная библиотека артефактов для Claude Code: гайды, скиллы, агенты,
-slash-команды, шаблоны промптов и настроек. Используется как «источник» —
-из него нужные вещи подключаются к новым проектам.
+A personal library of artifacts for Claude Code: guides, skills, agents,
+slash commands, prompt and settings templates. Used as a "source" — the pieces
+you need get plugged into new projects from here.
 
 ---
 
-## Быстрый старт
+## Quick start
 
 ```bash
-# 1. Клон / переход в каталог
+# 1. Clone / cd into the directory
 cd ~/Work/ExtraBoostLessons/CC-templates
 
-# 2. Посмотреть, что есть
+# 2. See what's here
 cat INDEX.md
 
-# 3. Установить скилл в ~/.claude/skills/
+# 3. Install a skill into ~/.claude/skills/
 ./scripts/install-skill.sh <skill-name>
 
-# 4. Использовать промпт-шаблон — скопировать в новый проект
+# 4. Use a prompt template — copy it into a new project
 cp prompts/<topic>/<name>.md <target-project>/
 ```
 
-> Скрипты установки создаются по мере появления артефактов. Пока папки
-> пустые — используй `INDEX.md` как карту.
+> Install scripts are added as artifacts appear. While folders are still
+> empty — use `INDEX.md` as the map.
 
 ---
 
-## Структура
+## Structure
 
 ```
 CC-templates/
-├── CLAUDE.md          # как работать с этим репо (инструкция для Claude Code)
-├── README.md          # этот файл
-├── INDEX.md           # индекс всех артефактов
-├── guides/            # длинные авторские гайды (CLAUDE.md, Git Flow, …)
-├── skills/            # скиллы Claude Code (папка со SKILL.md)
-├── agents/            # агенты (.md с frontmatter)
-├── commands/          # slash-команды
-├── prompts/           # шаблоны разовых промптов по темам
-├── templates/         # стартеры: CLAUDE.md, settings.json, структура
-├── snippets/          # hooks, permissions, regex, checklist-и
-└── scripts/           # установка/симлинк в ~/.claude
+├── CLAUDE.md          # how to work with this repo (instructions for Claude Code)
+├── README.md          # this file
+├── INDEX.md           # index of every artifact
+├── guides/            # long-form authored guides (CLAUDE.md, Git Flow, …)
+├── skills/            # Claude Code skills (folder with SKILL.md)
+├── agents/            # agents (.md with frontmatter)
+├── commands/          # slash commands
+├── prompts/           # one-off prompt templates by topic
+├── templates/         # starters: CLAUDE.md, settings.json, structure
+├── snippets/          # hooks, permissions, regex, checklists
+└── scripts/           # install/symlink into ~/.claude
 ```
 
-У каждой подпапки есть свой `README.md` с правилами оформления и шаблоном
-нового артефакта.
+Every subfolder has its own `README.md` with formatting rules and a template
+for a new artifact.
 
 ---
 
-## Навигация
+## Navigation
 
-- **Хочу посмотреть всё сразу** → `INDEX.md`
-- **Хочу добавить новый артефакт** → `CLAUDE.md` → раздел «Как работать»
-- **Хочу понять, как писать свой `CLAUDE.md`** → `guides/CLAUDE-MD-GUIDE.ru.md`
-- **Хочу процесс git/PR/релизов** → `guides/GIT-FLOW-GUIDE.ru.md`
+- **I want to see everything at once** → `INDEX.md`
+- **I want to add a new artifact** → `CLAUDE.md` → "How to work" section
+- **I want to understand how to write my own `CLAUDE.md`** → `guides/CLAUDE-MD-GUIDE.ru.md`
+- **I want the git/PR/release process** → `guides/GIT-FLOW-GUIDE.ru.md`
 
 ---
 
-## Лицензия / шаринг
+## License / sharing
 
-Личная библиотека. Если делишь с кем-то — убедись, что в артефактах нет
-персональных данных, токенов и внутренних ссылок.
+Personal library. If you share it with someone — make sure the artifacts
+contain no personal data, tokens, or internal links.

@@ -1,72 +1,72 @@
 # skills/
 
-Скиллы Claude Code. Каждый скилл — это **папка** с файлом `SKILL.md` и,
-опционально, вспомогательными файлами (шаблоны, регексы, примеры).
+Claude Code skills. Each skill is a **folder** with a `SKILL.md` file and,
+optionally, supporting files (templates, regexes, examples).
 
 ---
 
-## Структура скилла
+## Skill structure
 
 ```
 skills/<skill-name>/
-├── SKILL.md            # обязательно: YAML frontmatter + тело
-├── examples/           # опционально: примеры использования
-└── resources/          # опционально: шаблоны, схемы, данные
+├── SKILL.md            # required: YAML frontmatter + body
+├── examples/           # optional: usage examples
+└── resources/          # optional: templates, schemas, data
 ```
 
-## Шаблон `SKILL.md`
+## `SKILL.md` template
 
 ```markdown
 ---
 name: <skill-name>
-description: Используется, когда <триггер — опиши ситуацию, а не возможности>. Пример: "при рефакторинге React-компонентов" вместо "рефакторит React".
+description: Use when <trigger — describe the situation, not capabilities>. Example: "when refactoring React components" instead of "refactors React".
 ---
 
-# <Название>
+# <Title>
 
-## Когда использовать
+## When to use
 
-- Триггер 1
-- Триггер 2
+- Trigger 1
+- Trigger 2
 
-## Когда НЕ использовать
+## When NOT to use
 
-- Контр-пример 1
+- Counter-example 1
 
-## Процесс
+## Process
 
-1. Шаг 1
-2. Шаг 2
+1. Step 1
+2. Step 2
 
-## Примеры
+## Examples
 
-См. `examples/`.
+See `examples/`.
 ```
 
 ---
 
-## Правила
+## Rules
 
-- **Имя папки** = значение `name` во frontmatter, `kebab-case`.
-- **`description`** — описывает **триггер**, не возможности. Claude ориентируется
-  по нему, когда решать, вызвать скилл или нет.
-- Один скилл — одна чёткая задача. Если получилось три абзаца процесса с
-  ветками — разбей на несколько скиллов.
-- Не вкладывай сюда целый гайд; сделай ссылку в `../../guides/`.
+- **Folder name** = `name` from frontmatter, `kebab-case`.
+- **`description`** — describe the **trigger**, not the capabilities. Claude
+  uses this to decide whether to invoke the skill.
+- One skill — one clear job. If the process turns into three paragraphs with
+  branches, split it into multiple skills.
+- Don't embed a full guide here; link to `../../guides/` instead.
 
-## Установка
+## Install
 
 ```bash
-# Копия
+# Copy
 cp -r skills/<name> ~/.claude/skills/
 
-# Или симлинк (удобно, если правишь и сразу тестируешь)
+# Or symlink (handy when iterating and testing live)
 ln -s "$(pwd)/skills/<name>" ~/.claude/skills/<name>
 ```
 
-(Скрипт-обёртка — `scripts/install-skill.sh`, когда появится.)
+(Wrapper script — `scripts/install-skill.sh`, once it exists.)
 
-## Добавил новый — не забудь
+## After adding one
 
-1. Обновить корневой `INDEX.md` (секция «Скиллы»).
-2. Коммит: `feat(skills): add <skill-name>`.
+1. Update the root `INDEX.md` (Skills section).
+2. Commit: `feat(skills): add <skill-name>`.
