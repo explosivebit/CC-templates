@@ -84,7 +84,7 @@ cleanup) — здесь живёт audit-recipe и чек-листы домен�
 | 1 | `logic-reviewer` | `code-reviewer` / `general-purpose` | Логика + бизнес-корректность | Алгоритмы, edge cases, race conditions, idempotency |
 | 2 | `arch-reviewer` | `architect-reviewer` / `architect-review` | SOLID + архитектура | DI, dependency direction, patterns, over-engineering |
 | 3 | `type-reviewer` | `typescript-pro` / `typescript-type-auditor` или (для других языков) `general-purpose` | Типизация / type safety | `any`/casts/non-null, generic constraints, schema↔type alignment |
-| 4 | `security-reviewer` | `security-auditor` / `code-reviewer` | Безопасность + error handling | OWASP, injection, PII, swallowed errors, DoS |
+| 4 | `security-reviewer` | `security-auditor` / `security-expert` | Безопасность + error handling | OWASP, injection, PII, swallowed errors, DoS |
 
 Для нет-TS проектов — Type-reviewer становится `lint-reviewer` (статический анализ, mypy/clippy/etc).
 
