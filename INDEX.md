@@ -18,6 +18,7 @@
 Каждый скилл автоматически даёт slash-команду `/<имя-папки>`.
 
 - [audit](skills/audit/SKILL.md) — multi-expert review кода/архитектуры (≥4 агента: логика, SOLID, типы, безопасность; синтез + verdict). `/audit`.
+- [autorun](skills/autorun/SKILL.md) — autopilot orchestrator: один промпт → research → sprint → audit → report без approval-чекпойнтов; ADI на тупиках, остановка только на red-lines (push main, secrets, deploy, deletes). Для overnight / bypass-permissions сессий. `/autorun`.
 - [bootstrap](skills/bootstrap/SKILL.md) — разворачивает авторский стартовый скаффолд (CLAUDE.md + guides/) в новом или существующем проекте. `/bootstrap`.
 - [briefing](skills/briefing/SKILL.md) — утренний briefing задач/сообщений из task-tracker (Orchestra/Linear/Jira/GitHub) или локальных TODO-файлов. `/briefing`.
 - [build](skills/build/SKILL.md) — запускает имплементационную команду из готового research-отчёта (IMPLEMENTATION-PLAN.md → wave-by-wave). `/build`.
