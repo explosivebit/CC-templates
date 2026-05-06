@@ -360,99 +360,19 @@ If extra work surfaces mid-wave (bug, missing file, needed component):
 - Team-lead waits for ALL teammates (original + new) before closing the wave
 ```
 
-### 4d. Wave handoff
+### 4d. Wave handoff + token budget
 
-Between waves — task overlay for the user:
+Between waves, hand off to the user with a progress snapshot and next-step options. Format and token-budget warning thresholds (30% / 15%) are defined verbatim in [`references/OUTPUT-FORMATS.md`](references/OUTPUT-FORMATS.md) §1.
 
-```markdown
----
-## 📊 Sprint Progress: {title}
-
-### ✅ Completed
-- Wave 1: {summary} — {LOC} LOC, {N} files
-- Wave 2: ...
-
-### 🔄 Current: Wave {N}
-{description, agents, expected output}
-
-### 📋 Remaining
-- Wave {N+1}: {description}
-
-### ⚠️ Issues
-- {any from completed waves}
-
----
-
-Continue to Wave {N}? Or:
-- `/compact` — compact context
-- `plan mode` — enter plan mode
-- "clear context" — save progress and emit a continuation prompt
-```
-
-### 4e. Token budget awareness
-
-Before each new wave:
-
-```
-IF tokens remaining < 30%:
-  WARN user:
-    "⚠️ Context ~{X}% full. Before Wave {N}:
-     A. /compact — compact (fast, loses detail)
-     B. New chat with continuation prompt:
-
-     ## Continuation: {title} — Wave {N}
-     Branch: {branch}
-     Completed: Wave 1-{N-1} ({summary})
-     Remaining: Wave {N}-{total}
-
-     ### Wave {N} Prompt: {full description}
-     ### Files Modified So Far: {list}
-
-     C. Continue as is (risky)"
-
-IF tokens remaining < 15%:
-  → FORCE save continuation prompt, suggest new chat.
-```
+Always emit the handoff at the same moments — never skip, never improvise the layout mid-sprint.
 
 ---
 
 ## Step 5: Wave completion overlay
 
-After each wave:
+After each wave, emit a cumulative task overlay. Format is defined verbatim in [`references/OUTPUT-FORMATS.md`](references/OUTPUT-FORMATS.md) §2 — table of waves with status / agents / LOC / output, files modified, key decisions, next wave, and a fixed set of user-facing options.
 
-```markdown
-## 📋 Sprint Task Overlay: {title}
-
-### Progress: Wave {N}/{total}
-
-| Wave | Status | Agents | LOC | Output |
-|---|---|---|---|---|
-| 1 | ✅ Done | 3 | ~420 | stores, hooks, types |
-| 2 | ✅ Done | 3 | ~810 | sidebar, cmd+k, components |
-| 3 | 🔄 Next | 4 | ~1100 | full page, admin tools |
-| 4 | ⏳ Pending | 3 | ~500 | tests, polish, docs |
-
-### Files Modified (cumulative)
-- NEW: {list}
-- MODIFIED: {list}
-
-### Key Decisions
-- {decision 1}
-- {decision 2}
-
-### Next Wave: {N} — {name}
-{brief description}
-```
-
-Then options:
-
-```
-1. ▶️ Wave {N} — next wave
-2. 🔍 Review — show files from previous wave
-3. 📊 Tokens — check what's left
-4. 💾 Save progress — continuation prompt
-5. ⏸️ Pause
-```
+Use the format as-is; don't redesign it mid-sprint.
 
 ---
 
@@ -493,26 +413,7 @@ After ALL waves complete, the team **must** extract and document insights.
 
 ### Final output
 
-```markdown
-## ✅ Sprint Complete: {title}
-
-**Waves**: {N}/{N} | **Agents**: {total} | **LOC**: ~{total} | **Tests**: {count}
-
-### Deliverables
-{what we built}
-
-### Files Created/Modified
-{cumulative list}
-
-### Insights & Tech Debt
-{extracted, see above}
-
-### Possible Next Steps
-- [ ] Run full test suite
-- [ ] Type-check
-- [ ] Commit
-- [ ] Audit (see [`audit`](../audit/SKILL.md))
-```
+Emit the **Sprint Complete** report — format in [`references/OUTPUT-FORMATS.md`](references/OUTPUT-FORMATS.md) §3. It includes deliverables, cumulative file list, insights & tech debt block (mandatory — see "What to collect" above), and next-step checklist (test / type-check / commit / audit).
 
 ---
 
