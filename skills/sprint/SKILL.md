@@ -55,17 +55,18 @@ All other steps are shared.
 
 ---
 
-## Iron Rules (BREAK = SPRINT FAILS)
+## Iron Rules
 
-> These rules come from [`team`](../team/SKILL.md).
-> This is the critical minimum every plan **must** include.
+The six iron rules from [`team`](../team/SKILL.md) apply here without
+exception — `TeamCreate`-only, team-lead = coordinator, teammates do all
+the work, extra work spawns a new teammate, ask before `TeamDelete`,
+one-file-per-agent-per-wave. Read them in `team`; do not paraphrase
+them in plans (they drift).
 
-1. **`TeamCreate` is the only spawn path.** Direct `Task()` is forbidden.
-2. **Team-lead = coordination only.** Does NOT write code, edit files, or run tests. Only: spawn → monitor → verify → report → next wave.
-3. **Teammates = all the work.** Each in its own process, its own context.
-4. **Extra work → NEW teammate.** Never load it onto an existing one.
-5. **Before `TeamCreate` — check existing teams.** Ask the user before `TeamDelete`.
-6. **One file = one agent per wave.** Dependent tasks go in the next wave.
+**Sprint-specific application**: file ownership is enforced at the **wave
+level** — within a single wave, every file is owned by exactly one teammate;
+if two teammates need the same file, split into sequential waves. See
+the wave examples below for how this maps to a real plan.
 
 ---
 
