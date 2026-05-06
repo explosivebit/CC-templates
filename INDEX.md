@@ -20,6 +20,7 @@
 - [audit](skills/audit/SKILL.md) — multi-expert review кода/архитектуры (≥4 агента: логика, SOLID, типы, безопасность; синтез + verdict). `/audit`.
 - [autorun](skills/autorun/SKILL.md) — autopilot orchestrator: один промпт → research → sprint → audit → report без approval-чекпойнтов; ADI на тупиках, остановка только на red-lines (push main, secrets, deploy, deletes). Для overnight / bypass-permissions сессий. `/autorun`.
 - [diagnose](skills/diagnose/SKILL.md) — disciplined 6-фазный debug loop для трудных багов и perf-регрессий: build feedback loop → reproduce → hypothesise (3-5 ranked) → instrument → fix + regression test → cleanup. Phase 1 ("build a feedback loop") — это и есть скилл; всё остальное механика. Адаптировано из mattpocock/skills. `/diagnose`.
+- [refine](skills/refine/SKILL.md) — interview-driven refinement плана/дизайна/RFC: relentless walk по дереву решений (одна Q за раз), sharpen fuzzy terminology, surface contradictions против CONTEXT.md и кода, lazy-create CONTEXT.md/ADR на лету. Адаптация mattpocock grill-with-docs. `/refine`.
 - [bootstrap](skills/bootstrap/SKILL.md) — разворачивает авторский стартовый скаффолд (CLAUDE.md + guides/) в новом или существующем проекте. `/bootstrap`.
 - [briefing](skills/briefing/SKILL.md) — утренний briefing задач/сообщений из task-tracker (Orchestra/Linear/Jira/GitHub) или локальных TODO-файлов. `/briefing`.
 - [build](skills/build/SKILL.md) — запускает имплементационную команду из готового research-отчёта (IMPLEMENTATION-PLAN.md → wave-by-wave). `/build`.
