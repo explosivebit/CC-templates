@@ -1,45 +1,56 @@
 ---
 name: restore
-description: Восстанавливает контекст рабочей сессии — собирает свежую информацию о ветке, последних коммитах, незакоммиченных изменениях, stash'ах и (если доступно) о решениях из системы памяти. Используется в начале новой сессии или после долгого перерыва, когда нужно быстро вспомнить «где остановились». Триггеры (EN/RU) — "restore context", "where did I stop", "что я делал", "восстанови контекст", "напомни на чём я остановился", "session start", "/recall".
+description: Restores working session context — collects fresh info on the current branch, recent commits, uncommitted changes, stashes, and (if available) decisions from a memory system. Use at the start of a new session or after a long break, when you need to recall "where we left off". Triggers (EN/RU) — "restore context", "where did I stop", "что я делал", "восстанови контекст", "напомни на чём я остановился", "session start", "/recall".
 ---
 
 # Restore Context
 
-Быстрое восстановление контекста сессии: git-история + рабочая копия + (опционально)
-персистентная память. Цель — за один проход дать Claude и пользователю чёткий снимок
-«что было сделано и что осталось», чтобы продолжить работу без переоткрывания файлов
-вручную.
+Quick session context restore: git history + working copy + (optionally)
+persistent memory. Goal — give Claude and the user a clear "what was done,
+what's left" snapshot in one pass, so work resumes without manually reopening files.
 
 ---
 
-## Когда использовать
+## Project context (read first)
 
-- Старт новой сессии после паузы (день, неделя, релиз).
-- Пользователь просит: «напомни», «recall», «где остановились», «что я делал», «restore».
-- Перед запуском [`do`](../do/SKILL.md), [`sprint`](../sprint/SKILL.md) или другой длинной операции — чтобы план был построен на актуальном состоянии.
-- Опциональный аргумент-тема: «recall webhooks», «recall auth» — фокусирует поиск на конкретной области.
+If the project ran `/setup`, concrete paths and tracker are wired into:
 
-## Когда НЕ использовать
+- `@docs/agents/paths.md` — where TODOs/RFCs live (for git filters and recent-change search)
+- `@docs/agents/issue-tracker.md` — which tracker (for fresh in-progress issues during recall)
 
-- Уже всё свежо в контексте текущего разговора — повторный recall забьёт окно зря.
-- Пользователь просит изменить код или принять решение — это другая задача, recall лишь подготовка.
+Check via `test -d docs/agents`. If present, filter git log and memory queries
+by the project's real paths. If absent, fall back to git log + glob over TODO files.
 
 ---
 
-## Входные данные
+## When to use
 
-- Опциональная тема (`$ARGUMENTS`) — слово/фраза для фокусировки memory-запросов и git-фильтра.
-- Если пусто — общий обзор (ветка, последние коммиты, dirty state, stash, недавние решения).
+- Start of a new session after a pause (a day, a week, a release).
+- The user asks: "remind me", "recall", "where did we stop", "what was I doing", "restore".
+- Before invoking [`do`](../do/SKILL.md), [`sprint`](../sprint/SKILL.md), or any long operation — so the plan reflects current state.
+- Optional topic argument: "recall webhooks", "recall auth" — focuses the search on a specific area.
+
+## When NOT to use
+
+- Everything is already fresh in the current conversation — re-running recall just bloats the window.
+- The user wants to change code or make a decision — that's a different task; recall is preparation only.
 
 ---
 
-## Процесс
+## Input
 
-### 1. Параллельный сбор данных
+- Optional topic (`$ARGUMENTS`) — word/phrase to focus memory queries and the git filter.
+- Empty → general overview (branch, recent commits, dirty state, stash, recent decisions).
 
-Эти шаги независимы — выполняй их параллельно (один tool-call message на всё):
+---
 
-#### 1a. Git-снимок
+## Process
+
+### 1. Parallel collection
+
+These steps are independent — run them in parallel (one tool-call message for everything):
+
+#### 1a. Git snapshot
 
 ```bash
 git branch --show-current
@@ -50,119 +61,119 @@ git diff --stat HEAD~5..HEAD 2>/dev/null || echo "Less than 5 commits"
 git stash list
 ```
 
-Если репозиторий не git — пропусти этот блок и отметь в отчёте.
+If the repo isn't git — skip this block and note it in the report.
 
-#### 1b. Память (опционально, если доступна)
+#### 1b. Memory (optional, if available)
 
-Проверь, какие источники persistent memory есть в этой сессии:
+Check which persistent-memory sources exist in this session:
 
 - **Hindsight MCP** — `memory_recall(query)` / `memory_reflect(query)`.
-- **Knowledge files** — `notes/`, `decisions/`, `docs/decisions/`, `ADR-*.md`, `KNOWN-ISSUES.md` в корне или в `docs/`.
-- **Кастомная система** — спроси `CLAUDE.md` на предмет конвенций по «памяти проекта».
+- **Knowledge files** — `notes/`, `decisions/`, `docs/decisions/`, `ADR-*.md`, `KNOWN-ISSUES.md` at the root or under `docs/`.
+- **Custom system** — check `CLAUDE.md` for "project memory" conventions.
 
-Если ни один источник не настроен — пропусти блок, не выдумывай.
+If no source is configured — skip the block, don't invent.
 
-Базовые запросы (адаптируй под доступную систему):
+Baseline queries (adapt to whichever system is available):
 
 ```
 "recent decisions, architecture changes, current sprint status"
 "blockers, bugs, known issues, pending work"
 ```
 
-Если задан `$ARGUMENTS`:
+If `$ARGUMENTS` is set:
 
 ```
 "$ARGUMENTS — recent work, decisions, status, next steps"
 ```
 
-#### 1c. Рабочая копия
+#### 1c. Working copy
 
-- Прочти первые 20–30 строк `CLAUDE.md` (если есть) — там обычно «что это за проект».
-- Глянь `README.md` верхнего уровня, если CLAUDE.md нет.
+- Read the first 20–30 lines of `CLAUDE.md` (if present) — usually states "what this project is".
+- Glance at the top-level `README.md` if there's no CLAUDE.md.
 
-### 2. Синтез
+### 2. Synthesis
 
-Из собранного выдели:
+From what you collected, extract:
 
-1. **Ветка и интент** — имя ветки часто содержит RFC/issue/feature; если да — упомяни.
-2. **Прогресс** — 5–10 последних коммитов одной фразой.
-3. **Решения** — ключевые выборы из памяти (если была).
-4. **Открытые пункты** — блокеры, баги, незавершённое.
-5. **Dirty state** — незакоммиченные изменения, stash'и.
+1. **Branch and intent** — branch names often contain RFC/issue/feature; mention if so.
+2. **Progress** — last 5–10 commits in one phrase.
+3. **Decisions** — key choices from memory (if available).
+4. **Open items** — blockers, bugs, unfinished work.
+5. **Dirty state** — uncommitted changes, stashes.
 
-### 3. Презентация
+### 3. Presentation
 
-Один markdown-блок с фиксированной структурой:
+A single markdown block with fixed structure:
 
 ```markdown
-# Контекст — $DATE
+# Context — $DATE
 
-**Ветка**: `$BRANCH` | **Последний коммит**: $TIME назад
+**Branch**: `$BRANCH` | **Last commit**: $TIME ago
 
 ---
 
 ## Recent Commits
 
-| Commit | Когда | Описание |
-| ------ | ----- | -------- |
+| Commit | When | Description |
+| ------ | ---- | ----------- |
 
-## Изменённые области
+## Touched areas
 
-(группируй по подкаталогу/пакету/модулю)
+(group by subdir/package/module)
 
-## Из памяти
+## From memory
 
-### Решения
-
-- ...
-
-### Текущий фокус
+### Decisions
 
 - ...
 
-### Известные проблемы
+### Current focus
+
+- ...
+
+### Known issues
 
 - ...
 
 ---
 
-## Рабочее дерево
+## Working tree
 
-$STATUS  (или «Clean»)
+$STATUS  (or "Clean")
 
 ## Stashes
 
-$STASHES (или «None»)
+$STASHES (or "None")
 
 ---
 
-## Возможные следующие шаги
+## Possible next steps
 
 1. ...
 2. ...
 ```
 
-Пустые секции — пропускай (не выводи «нет данных» к каждой).
+Skip empty sections — don't print "no data" under each one.
 
-### 4. Подсказки следующего шага
+### 4. Next-step hints
 
-В конце добавь 2–4 рекомендации, основанные на найденном:
+End with 2–4 recommendations grounded in what you found:
 
-- Есть незакоммиченные изменения → «Посмотри `git diff`, прежде чем продолжать».
-- Память упоминает незавершённый TODO → «Продолжить с: …».
-- Все коммиты в одной области → «Фокус был на [X], логичный next step — [Y]».
-- `$ARGUMENTS` совпал с RFC/spec файлом → дай ссылку на файл и краткий статус.
+- Uncommitted changes → "Check `git diff` before continuing."
+- Memory mentions an unfinished TODO → "Resume with: …".
+- All commits clustered in one area → "Focus was [X], natural next step is [Y]."
+- `$ARGUMENTS` matches an RFC/spec file → link the file and a one-line status.
 
 ---
 
-## Связанные скиллы
+## Related skills
 
-- [`do`](../do/SKILL.md) — после восстановления контекста удобно делегировать задачу orchestrator'у.
-- [`briefing`](../briefing/SKILL.md) — если восстановление нужно по «человеческим» задачам (taskи, дедлайны), а не по коду.
-- [`research`](../research/SKILL.md) — если требуется глубокое погружение в тему, а не быстрый снимок.
+- [`do`](../do/SKILL.md) — after restoring context, it's natural to delegate the task to the orchestrator.
+- [`briefing`](../briefing/SKILL.md) — when restoration is about "human" tasks (deadlines, assignments) rather than code.
+- [`research`](../research/SKILL.md) — when deep-diving into a topic instead of taking a quick snapshot.
 
 ## Anti-patterns
 
-- **Не вызывай recall перед каждым сообщением** — это не «health check», а старт-сессии операция.
-- **Не выдумывай память, которой нет** — если Hindsight/MCP недоступен, явно отметь «memory: not configured» вместо галлюцинации решений.
-- **Не дублируй полный `git log`** — 10–15 строк достаточно, остальное — по запросу.
+- **Don't recall before every message** — this is a session-start operation, not a health check.
+- **Don't invent memory that isn't there** — if Hindsight/MCP is unavailable, mark "memory: not configured" instead of hallucinating decisions.
+- **Don't dump the full `git log`** — 10–15 lines is enough; the rest is on demand.

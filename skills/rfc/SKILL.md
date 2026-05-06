@@ -1,53 +1,67 @@
 ---
 name: rfc
-description: Создаёт, читает и обновляет RFC (Request for Comments) / design docs — структурированные документы для архитектурных решений. Знает каноническую структуру (Meta header, Phase Progress, Implementation TODO, ADR), правила обновления прогресс-баров, формат checkbox'ов. Используется при предложении нового технического решения, документировании архитектуры, или обновлении прогресса по существующему RFC после спринта/волны. Триггеры (EN/RU) — "write RFC", "create design doc", "update RFC progress", "draft proposal", "ADR", "напиши RFC", "сделай design doc", "обнови прогресс RFC", "создай предложение", "архитектурное решение".
+description: Creates, reads, and updates RFCs (Request for Comments) / design docs — structured documents for architectural decisions. Knows the canonical structure (Meta header, Phase Progress, Implementation TODO, ADR), the rules for updating progress bars, and the checkbox format. Use when proposing a new technical solution, documenting architecture, or updating progress on an existing RFC after a sprint/wave. Triggers (EN/RU) — "write RFC", "create design doc", "update RFC progress", "draft proposal", "ADR", "напиши RFC", "сделай design doc", "обнови прогресс RFC", "создай предложение", "архитектурное решение".
 ---
 
 # RFC Document
 
-Канонический формат RFC / design docs / ADR. Скилл универсальный: работает там, где
-RFC хранятся в `docs/rfc/`, `docs/design/`, `docs/adr/` или просто в корне проекта.
-Имя префикса (RFC / ADR / DESIGN) определяется конвенцией проекта — спроси `CLAUDE.md`
-или посмотри уже существующие файлы.
+Canonical format for RFC / design docs / ADR. The skill is universal: it works
+whether RFCs live in `docs/rfc/`, `docs/design/`, `docs/adr/`, or at the project
+root. The prefix (RFC / ADR / DESIGN) follows the project's convention — check
+`CLAUDE.md` or look at existing files.
 
 ---
 
-## Когда использовать
+## Project context (read first)
 
-- Пользователь предложил новый архитектурный подход и хочет «зафиксировать как RFC / ADR».
-- Нужно обновить прогресс по существующему RFC после волны/спринта (Phase Progress, Implementation Log).
-- Нужно прочитать RFC и извлечь актуальный статус, оставшиеся задачи, ADR.
-- Нужно создать `RFC-INDEX.md` для папки с RFC.
+If the project ran `/setup`, the path to RFC/ADR/design-docs is wired into:
 
-## Когда НЕ использовать
+- `@docs/agents/paths.md` — fields "RFC dir", "ADR dir", "Architecture docs"
 
-- Пользователю нужен README, getting-started guide или туториал — это другой формат.
-- Решение тривиальное (переименование переменной, фикс опечатки) — RFC overkill.
-- Документ описывает API endpoints — это OpenAPI, а не RFC.
+Check via `test -f docs/agents/paths.md`. If present, write new RFCs into the
+specified directory and read existing ones from there. If absent, glob for
+`**/RFC-*.md`, `docs/rfc/`, `docs/adr/`, `docs/design/`. If nothing turns up,
+ask the user where to put it (and offer to record the answer in
+`docs/agents/paths.md` for future sessions).
 
 ---
 
-## Базовая структура RFC
+## When to use
+
+- The user proposed a new architectural approach and wants to "capture as RFC / ADR".
+- An existing RFC needs progress updated after a wave/sprint (Phase Progress, Implementation Log).
+- An RFC needs reading to extract current status, remaining tasks, ADRs.
+- An `RFC-INDEX.md` needs creating for an RFC folder.
+
+## When NOT to use
+
+- The user wants a README, getting-started guide, or tutorial — different format.
+- The decision is trivial (rename a variable, fix a typo) — RFC is overkill.
+- The document describes API endpoints — that's OpenAPI, not an RFC.
+
+---
+
+## Base RFC structure
 
 ```
 ┌─────────────────────────────────────────┐
-│ 1. Title + Meta Table                   │  ← обязательно
-│ 2. Summary                              │  ← обязательно
-│ 3. Motivation / Problem Statement       │  ← обязательно
-│ 4. Goals / Non-Goals                    │  ← обязательно
-│ 5. Architecture Overview                │  ← рекомендуется (ASCII art)
-│ 6. Detailed Design                      │  ← основное тело
-│ 7. Table of Contents                    │  ← если RFC > 500 строк
+│ 1. Title + Meta Table                   │  ← required
+│ 2. Summary                              │  ← required
+│ 3. Motivation / Problem Statement       │  ← required
+│ 4. Goals / Non-Goals                    │  ← required
+│ 5. Architecture Overview                │  ← recommended (ASCII art)
+│ 6. Detailed Design                      │  ← main body
+│ 7. Table of Contents                    │  ← if RFC > 500 lines
 │ ...                                     │
-│ N-2. Implementation TODO                │  ← обязательно (фазы + чекбоксы)
-│ N-1. Implementation Log                 │  ← после начала работы (волны)
-│ N.   ADRs / References                  │  ← опционально
+│ N-2. Implementation TODO                │  ← required (phases + checkboxes)
+│ N-1. Implementation Log                 │  ← after work begins (waves)
+│ N.   ADRs / References                  │  ← optional
 └─────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. Meta Header (обязательно)
+## 1. Meta Header (required)
 
 ```markdown
 # RFC-{NNN}: {Title}
@@ -60,12 +74,12 @@ RFC хранятся в `docs/rfc/`, `docs/design/`, `docs/adr/` или прос
 | **Updated**    | YYYY-MM-DD                                         |
 | **Priority**   | P0 / P1 / P2                                       |
 | **Depends On** | RFC-XXX, RFC-YYY                                   |
-| **Supersedes** | RFC-ZZZ (если заменяет)                            |
-| **Branch**    | `feat/RFC-{NNN}-short-name` или `merged to main`   |
+| **Supersedes** | RFC-ZZZ (if it replaces something)                 |
+| **Branch**    | `feat/RFC-{NNN}-short-name` or `merged to main`    |
 | **TODO Line**  | ~{line_number}                                     |
 ```
 
-### Phase Progress (ASCII bars в начале файла)
+### Phase Progress (ASCII bars at the top of the file)
 
 ```
 Phase 0 ████████████████████████ 27/27 (100%) DB Foundation       CLOSED
@@ -76,37 +90,37 @@ Phase 3 ██████████████████████░░
 TOTAL                            82/88 ( 93%)
 ```
 
-**Правила**:
-- Бар = 24 символа (`█` filled, `░` empty).
+**Rules**:
+- Bar = 24 chars (`█` filled, `░` empty).
 - Numbers right-aligned.
-- Обновляй после **каждого** sprint/wave.
-- `<-` после строки активной фазы (если хочешь подсветить).
+- Update after **every** sprint/wave.
+- `<-` after the active phase line (if you want to highlight it).
 
 ---
 
-## 2. Status — допустимые значения и нюансы
+## 2. Status — allowed values and nuances
 
-| Status | Когда |
+| Status | When |
 |---|---|
-| `Draft` | RFC написан, реализация не начата. |
-| `Active — Wave N complete, Phase X partial` | В процессе. Указывай детали. |
-| `~99% DONE — Phase 0-5 done, Remaining: E2E + hardening` | Почти завершён. |
-| `**PR #N MERGED** — Phase 0-5 done, Phase 6-7 pending` | Часть смерджена, остальное в работе. |
-| `Done` | Полностью реализован. |
-| `Superseded by RFC-XXX` | Заменён новым RFC. |
+| `Draft` | RFC written, implementation not started. |
+| `Active — Wave N complete, Phase X partial` | In progress. Spell out details. |
+| `~99% DONE — Phase 0-5 done, Remaining: E2E + hardening` | Almost finished. |
+| `**PR #N MERGED** — Phase 0-5 done, Phase 6-7 pending` | Part merged, rest in flight. |
+| `Done` | Fully implemented. |
+| `Superseded by RFC-XXX` | Replaced by a newer RFC. |
 
 ---
 
 ## 3. Implementation TODO
 
-Живой трекер прогресса. Структура секции:
+A live progress tracker. Section structure:
 
 ```markdown
 ## N. Implementation TODO
 
 **Branch**: `feat/RFC-{NNN}-short-name`
 **Start Date**: YYYY-MM-DD
-**Strategy**: краткое описание подхода
+**Strategy**: short description of the approach
 
 ### Phase Progress
 
@@ -127,16 +141,16 @@ TOTAL                            82/88 ( 93%)
 ### Phase 1: ...
 ```
 
-**Правила чекбоксов**:
-- `[x]` = реально сделано (не «по плану», а есть код в репо). Перед галочкой — `grep`/`glob` для проверки.
-- `[ ]` = ещё не сделано (или deferred с пометкой).
-- После каждого пункта — путь к файлу или ключевая ссылка.
+**Checkbox rules**:
+- `[x]` = actually done (not "planned" — code exists in the repo). Verify with `grep`/`glob` before checking the box.
+- `[ ]` = not yet done (or deferred with a note).
+- After each item — file path or key reference.
 
 ---
 
 ## 4. Implementation Log
 
-После начала работы добавляй секции по волнам/спринтам:
+Once work starts, append sections per wave/sprint:
 
 ```markdown
 ## N+1. Implementation Log
@@ -153,14 +167,14 @@ TOTAL                            82/88 ( 93%)
 - `package.json` (add prisma scripts)
 
 **Decisions**:
-- Используем soft-delete вместо hard-delete для аудита.
-- Индекс на `(tenant_id, created_at)` для основного query pattern.
+- Use soft-delete instead of hard-delete for audit.
+- Index on `(tenant_id, created_at)` for the main query pattern.
 
 #### Sprint Insights & Bottlenecks
 - **ADR**: ... (link to ADR section)
-- **Узкое место**: ...
+- **Bottleneck**: ...
 - **Tech debt**: ...
-- **Паттерн для переиспользования**: ...
+- **Reusable pattern**: ...
 
 ### Wave 2 — Backend Logic (YYYY-MM-DD)
 ...
@@ -170,54 +184,54 @@ TOTAL                            82/88 ( 93%)
 
 ## 5. ADR (Architecture Decision Records)
 
-Внутри RFC или отдельным файлом:
+Inside the RFC or as a separate file:
 
 ```markdown
 ### ADR-{NNN}: {Title}
 
 **Status**: Accepted | Proposed | Deprecated | Superseded by ADR-XXX
 **Date**: YYYY-MM-DD
-**Context**: что заставляет принимать решение
-**Decision**: что мы решаем
+**Context**: what forces this decision
+**Decision**: what we decide
 **Consequences**:
-  - Положительные: …
-  - Отрицательные: …
+  - Positive: …
+  - Negative: …
   - Tradeoffs: …
 **Alternatives considered**: …
 ```
 
 ---
 
-## Процесс: создание нового RFC
+## Process: creating a new RFC
 
-### 1. Сориентируйся
+### 1. Orient
 
 ```bash
-# найди существующие RFC
+# find existing RFCs
 find . -name "RFC-*.md" -not -path "*/node_modules/*" 2>/dev/null
 find . -name "ADR-*.md" -not -path "*/node_modules/*" 2>/dev/null
 ls docs/rfc/ docs/design/ docs/adr/ 2>/dev/null
 ```
 
-- Узнай конвенцию (RFC / ADR / DESIGN, путь, нумерация).
-- Найди `RFC-INDEX.md` (если есть) — определи следующий свободный номер.
+- Determine the convention (RFC / ADR / DESIGN, path, numbering).
+- Find `RFC-INDEX.md` (if any) — pick the next free number.
 
-### 2. Спроси у пользователя
+### 2. Ask the user
 
-- Тема RFC (одно предложение).
-- Уровень: full RFC или короткий ADR?
-- Куда сохранить: путь по конвенции проекта.
-- Зависимости / Supersedes (если есть).
+- RFC topic (one sentence).
+- Level: full RFC or short ADR?
+- Where to save: path per project convention.
+- Dependencies / Supersedes (if any).
 
-### 3. Создай файл
+### 3. Create the file
 
-Заполни Meta Header, Summary, Motivation, Goals/Non-Goals.
-Добавь пустые Phase Progress бары (0%) и пустой Implementation TODO.
-**Не пиши Implementation Log** — он появится после первой волны.
+Fill in Meta Header, Summary, Motivation, Goals/Non-Goals.
+Add empty Phase Progress bars (0%) and an empty Implementation TODO.
+**Don't write Implementation Log** — it appears after the first wave.
 
-### 4. Обнови индекс
+### 4. Update the index
 
-Если есть `RFC-INDEX.md`:
+If `RFC-INDEX.md` exists:
 
 ```markdown
 | RFC | Title | Status | Updated |
@@ -225,33 +239,33 @@ ls docs/rfc/ docs/design/ docs/adr/ 2>/dev/null
 | 080 | Command Center | Draft | 2026-04-26 |
 ```
 
-### 5. Закомить (только по запросу пользователя)
+### 5. Commit (only on user request)
 
 `feat(docs): add RFC-{NNN}-{short-name}`.
 
 ---
 
-## Процесс: обновление RFC после волны/спринта
+## Process: updating an RFC after a wave/sprint
 
-1. Читай RFC с `offset`+`limit` если он большой (>500 строк) — сначала Meta + Phase Progress, потом конкретный Phase.
-2. Обнови Phase Progress (бары, таблицу, проценты, статусы).
-3. Поставь `[x]` напротив выполненных пунктов; **верифицируй** их `grep`/`glob` — если кода нет, не ставь галочку.
-4. Добавь новый блок в Implementation Log — Wave N с датой, файлами, решениями, инсайтами.
-5. Обнови `Updated` поле в Meta.
-6. Если был мерж — обнови `Status` (например, `**PR #N MERGED** — Phase X done`).
+1. Read the RFC with `offset`+`limit` if it's large (>500 lines) — Meta + Phase Progress first, then the specific Phase.
+2. Update Phase Progress (bars, table, percentages, statuses).
+3. Mark `[x]` on completed items; **verify** with `grep`/`glob` — don't tick if the code isn't there.
+4. Add a new block to Implementation Log — Wave N with date, files, decisions, insights.
+5. Update the `Updated` field in Meta.
+6. If a merge happened — update `Status` (e.g. `**PR #N MERGED** — Phase X done`).
 
 ---
 
-## Связанные скиллы
+## Related skills
 
-- [`sprint`](../sprint/SKILL.md) — после волны нужно обновить RFC.
-- [`research`](../research/SKILL.md) — research часто заканчивается RFC.
-- [`do`](../do/SKILL.md) — пайплайн «research → write RFC».
+- [`sprint`](../sprint/SKILL.md) — after a wave you need to update the RFC.
+- [`research`](../research/SKILL.md) — research often ends in an RFC.
+- [`do`](../do/SKILL.md) — the "research → write RFC" pipeline.
 
 ## Anti-patterns
 
-- **Не ставь `[x]` без верификации в коде** — TODO быстро становится устаревшим.
-- **Не дублируй Phase Progress в трёх местах** — Meta + начало TODO достаточно.
-- **Не пиши «Implementation Log: TBD»** — пустую секцию просто не создавай.
-- **Не клади в RFC API endpoints/полные схемы JSON** — они принадлежат `openapi.yaml` или отдельному guide.
-- **Не путай RFC и ADR**: RFC — широкое предложение, ADR — точечное решение. Если документ — одно решение на 1 страницу, это ADR.
+- **Don't tick `[x]` without verifying in the code** — the TODO turns stale fast.
+- **Don't duplicate Phase Progress in three places** — Meta + start of TODO is enough.
+- **Don't write "Implementation Log: TBD"** — just don't create the section yet.
+- **Don't dump API endpoints / full JSON schemas into the RFC** — those belong in `openapi.yaml` or a separate guide.
+- **Don't conflate RFC and ADR**: RFC is a broad proposal; ADR is a single decision. If the document is one decision on one page, it's an ADR.

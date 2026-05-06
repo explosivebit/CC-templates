@@ -1,66 +1,66 @@
 # CLAUDE.md — <PROJECT_NAME>
 
-<Одно-два предложения: что это за проект и какую задачу он решает. Замени плейсхолдер.>
+<One or two sentences: what this project is and what problem it solves. Replace this placeholder.>
 
 ---
 
-## 🔴 Красные линии
+## Red lines
 
-- **Деструктивные git-операции** (`push --force`, `reset --hard`, удаление веток/тегов,
-  `rebase -i` на чужой истории) — только по явному подтверждению пользователя.
-- **Не коммить секреты** (`.env`, токены, ключи). Перед `git add` — `git status` и убедись, что нет чувствительных файлов.
-- **Не обходи защиту веток.** `main` и `develop` защищены, merge только через PR.
-- **Не правь чужой историй.** Если `git log` показывает коммиты не от тебя — не делай `rebase`, `amend`, `reset`.
-- **Не запускай долгие/платные операции** (деплой, миграции, массовые сетевые запросы) без подтверждения.
+- **Destructive git operations** (`push --force`, `reset --hard`, deleting branches/tags,
+  `rebase -i` on someone else's history) — only with explicit user confirmation.
+- **Don't commit secrets** (`.env`, tokens, keys). Before `git add` — run `git status` and confirm no sensitive files.
+- **Don't bypass branch protection.** `main` and `develop` are protected; merge only via PR.
+- **Don't rewrite someone else's history.** If `git log` shows commits not by you — no `rebase`, `amend`, or `reset`.
+- **Don't run long/expensive operations** (deploy, migrations, mass network calls) without confirmation.
 
 ---
 
-## Что это за проект
+## What this project is
 
-<Заполни:
-- тип: приложение / библиотека / скрипт / документация
-- стек: языки, фреймворки, базы
-- точка входа: как запускать локально
-- где документация / README
+<Fill in:
+- type: application / library / script / documentation
+- stack: languages, frameworks, databases
+- entry point: how to run locally
+- where the docs / README live
 >
 
 ---
 
-## Справочник
+## Reference
 
-См. [`guides/INDEX.md`](guides/INDEX.md) — методические гайды по процессу:
+See [`guides/INDEX.md`](guides/INDEX.md) — process guides:
 
-- Git Flow, Conventional Commits, PR, SemVer, safety-правила
-- Как писать CLAUDE.md, best/bad practices
+- Git Flow, Conventional Commits, PR, SemVer, safety rules
+- How to write CLAUDE.md, best/bad practices
 
-Гайды в `guides/` — **источник истины** по процессу. Не дублируй их содержимое здесь, ссылайся.
+The guides in `guides/` are **the source of truth** for process. Don't duplicate their content here — link to them.
 
 ---
 
-## Как работать с этим проектом
+## How to work with this project
 
-<Заполни:
-- Локальный запуск: команды
-- Тесты: как запускать
-- Линтеры / форматтеры
-- Основные команды package manager'а
+<Fill in:
+- Local run: commands
+- Tests: how to run
+- Linters / formatters
+- Main package-manager commands
 >
 
 ---
 
-## Конвенции
+## Conventions
 
-- **Git:** Git Flow (см. `guides/GIT-FLOW-GUIDE.ru.md`). Ветки `feature/*`, `release/*`, `hotfix/*`. Коммиты — Conventional Commits.
-- **Именование:** файлы `kebab-case`, идентификаторы — по конвенции языка.
-- **Комментарии:** только там, где WHY неочевиден. Не дублируй WHAT — код сам это показывает.
+- **Git:** Git Flow (see `guides/GIT-FLOW-GUIDE.ru.md`). Branches `feature/*`, `release/*`, `hotfix/*`. Commits — Conventional Commits.
+- **Naming:** files `kebab-case`, identifiers per language convention.
+- **Comments:** only where the WHY isn't obvious. Don't restate WHAT — the code shows that.
 
 ---
 
 ## Non-goals
 
-<Явно зафиксируй, чего проект НЕ делает. Помогает Claude не уносить скоуп:
-- примеры:
-  - не занимается аутентификацией (отдельный сервис)
-  - не хранит состояние на диске
-  - не поддерживает < Node 20
+<Explicitly capture what the project does NOT do. Helps Claude avoid scope creep:
+- examples:
+  - doesn't handle authentication (separate service)
+  - doesn't persist state to disk
+  - doesn't support < Node 20
 >

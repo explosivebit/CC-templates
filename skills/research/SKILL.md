@@ -1,125 +1,144 @@
 ---
 name: research
-description: Глубокий многоагентный research по теме — параллельные агенты-разведчики покрывают source code, design docs/RFC, TODO/status файлы, reference implementations, persistent memory. Каждому агенту — свой ограниченный домен и свой контекст. Используется, когда тема большая (auth chain, сравнение с конкурентами, gap-analysis по фиче) и одного агента/контекста недостаточно. Триггеры (EN/RU) — "deep research", "explore X across the project", "compare our X with Y", "gap analysis for X", "разберись", "изучи", "сравни", "глубокий research", "что есть по теме X", "/research".
+description: Deep multi-agent research on a topic — parallel scout agents cover source code, design docs/RFCs, TODO/status files, reference implementations, persistent memory. Each agent gets a bounded domain and its own context. Use when the topic is large (auth chain, competitor comparison, gap-analysis for a feature) and one agent/context isn't enough. Triggers (EN/RU) — "deep research", "explore X across the project", "compare our X with Y", "gap analysis for X", "разберись", "изучи", "сравни", "глубокий research", "что есть по теме X", "/research".
 ---
 
 # Multi-Agent Deep Research
 
-Параллельная разведка темы силами нескольких агентов с непересекающимися областями.
-Каждый источник знания — большой и требует своего контекстного окна; разделение
-позволяет не выходить за лимит и одновременно дать каждому агенту простор для
-тщательной проверки.
+Parallel scouting of a topic by multiple agents with non-overlapping domains.
+Each knowledge source is large and needs its own context window; splitting work
+keeps every agent under the limit while leaving room for thorough verification.
 
-Опирается на [`team`](../team/SKILL.md) —
-все правила Mode A/B, file ownership, cleanup идут оттуда. Здесь живёт research-recipe.
-
----
-
-## Когда использовать
-
-- Тема большая или незнакомая, нужен «полный обзор» (auth chain, queue architecture, RAG pipeline).
-- Сравнение «наш подход vs reference implementations».
-- Gap-analysis перед началом фичи: что уже есть, чего не хватает, где документация рассинхронилась с кодом.
-- Пользователь сказал: «разберись», «изучи», «сравни», «что у нас по теме X», «deep research».
-
-## Когда НЕ использовать
-
-- Точечный вопрос «где функция X?» — обычный grep быстрее.
-- Все источники в одном модуле (1 пакет, 1 файл) — лишняя оркестрация.
-- Нужен план внесения изменений — это [`sprint`](../sprint/SKILL.md).
+Builds on [`team`](../team/SKILL.md) — all rules for Mode A/B, file ownership, and
+cleanup live there. This file holds the research recipe.
 
 ---
 
-## Архитектура: 5 агентов, 5 доменов
+## Project context (read first)
 
-| Агент | Что ищет | Что НЕ трогает |
+If `/setup` ran in the project, paths and terminology are pinned in:
+
+- `@docs/agents/paths.md` — where RFCs, TODOs, ADRs, and source code live
+- `@docs/agents/issue-tracker.md` — which tracker (Orchestra/GitHub/Linear/local) and how to query it
+- `@CONTEXT.md` — domain glossary (use when phrasing queries)
+
+Check with `test -f docs/agents/paths.md`. If the files exist, hand their contents
+to each teammate inside the prompt. If not, fall back to auto-detection (glob
+`**/docs/`, `**/RFC-*.md`, `**/TODO*.md`).
+
+Never assume project-specific paths — either read `docs/agents/*.md` or glob in
+the current session.
+
+---
+
+## When to use
+
+- Topic is large or unfamiliar; need a full overview (auth chain, queue architecture, RAG pipeline).
+- Comparison: "our approach vs reference implementations".
+- Gap analysis before a feature: what exists, what's missing, where docs drifted from code.
+- User said: "разберись", "изучи", "сравни", "что у нас по теме X", "deep research".
+
+## When NOT to use
+
+- Pinpoint question "where is function X?" — plain grep is faster.
+- All sources sit in one module (1 package, 1 file) — orchestration overhead isn't worth it.
+- You need a change plan — that's [`sprint`](../sprint/SKILL.md).
+
+---
+
+## Architecture: 5 agents, 5 domains
+
+| Agent | Searches | Does NOT touch |
 |---|---|---|
-| **code-researcher** | Source code: `src/`, `packages/`, `services/`, `apps/`, тесты | Документацию, reference, memory |
-| **doc-researcher** | RFC, design docs, guides, ADR, README верхнего уровня | Source code, TODO |
-| **status-researcher** | TODO files, project status docs, KNOWN-ISSUES, recently_completed | Source code, RFC |
-| **reference-researcher** | `sources/`, `vendor/`, `examples/`, Context7 для внешних либ | Внутренний код проекта |
-| **knowledge-researcher** | Persistent memory (Hindsight/notes), `research/`, `docs/decisions/` | Source code, reference |
+| **code-researcher** | Source code: `src/`, `packages/`, `services/`, `apps/`, tests | Documentation, references, memory |
+| **doc-researcher** | RFCs, design docs, guides, ADRs, top-level READMEs | Source code, TODOs |
+| **status-researcher** | TODO files, project status docs, KNOWN-ISSUES, recently_completed | Source code, RFCs |
+| **reference-researcher** | `sources/`, `vendor/`, `examples/`, Context7 for external libs | Internal project code |
+| **knowledge-researcher** | Persistent memory (Hindsight/notes), `research/`, `docs/decisions/` | Source code, references |
 
-Если в проекте нет какого-то источника (нет `sources/` или нет memory) — соответствующего агента просто пропускай. **Не выдумывай несуществующие** домены.
-
----
-
-## Lightweight mode (2–3 агента)
-
-Для узких/простых вопросов:
-
-- Простой факт-вопрос («где находится X?»).
-- Один домен (только код ИЛИ только docs).
-- Ожидается <10 файлов.
-
-Тогда — параллельные `Task()` без `TeamCreate`. Правило выбора:
-
-- **3+ агента** → MUST `TeamCreate` (Mode A).
-- **1–2 агента** → допустимо без team.
-- **Сомнения** → `TeamCreate` (overhead минимален).
+If a source doesn't exist in the project (no `sources/`, no memory), skip the
+matching agent. **Don't invent** non-existent domains.
 
 ---
 
-## Процесс
+## Lightweight mode (2–3 agents)
+
+For narrow or simple questions:
+
+- Plain factual question ("where is X located?").
+- Single domain (only code OR only docs).
+- Expected scope <10 files.
+
+Use parallel `Task()` calls without `TeamCreate`. Selection rule:
+
+- **3+ agents** → MUST `TeamCreate` (Mode A).
+- **1–2 agents** → no team is fine.
+- **In doubt** → `TeamCreate` (overhead is minimal).
+
+---
+
+## Process
 
 ### Step 0: Validate input
 
-`$ARGUMENTS` — тема. Если пусто:
+`$ARGUMENTS` is the topic. If empty:
 
 ```
-Что исследовать? Примеры:
+What to research? Examples:
 - "auth chain architecture"
 - "что у нас сделано по webhooks"
 - "сравни наш queue с n8n и trigger.dev"
 - "SSO SAML integration patterns"
 ```
 
-### Step 1: Recall (быстрая проверка памяти)
+### Step 1: Recall (quick memory check)
 
-Если memory доступна:
+If memory is available:
 
 ```
 memory_recall("$ARGUMENTS")
 ```
 
-Это бесплатно и часто уже содержит частичный ответ. Поделись результатом со всеми teammates.
+Free, and often already holds part of the answer. Share the result with all teammates.
 
 ### Step 2: Classify — keywords + domain mapping
 
-Извлеки 3–5 ключевых слов:
+Extract 3–5 keywords:
 
 - "auth chain architecture" → `auth, chain, middleware, session, token`
 - "SSO SAML integration" → `sso, saml, oidc, connector, login`
 - "webhooks v2" → `webhook, event, notification, callback, realtime`
 
-Определи, какие из 5 доменов реально применимы (если в проекте нет `sources/` — нет reference-researcher'а).
+Determine which of the 5 domains actually apply (no `sources/` → no reference-researcher).
 
 ### Step 3: Spawn team
 
-`TeamCreate(team_name="research-{sanitized-topic}")` + до 5 параллельных `Agent(team_name=...)` в **одном** message.
+`TeamCreate(team_name="research-{sanitized-topic}")` + up to 5 parallel `Agent(team_name=...)`
+calls in **one** message.
 
-Шаблоны промптов — ниже. Каждый получает: тему, ключевые слова, результат `memory_recall` (если был), свой scope, свой output format.
+Prompt templates are below. Each agent gets: topic, keywords, `memory_recall` result
+(if any), its scope, its output format.
 
 ### Step 4: Synthesize
 
-Когда все вернулись:
+When all agents return:
 
-1. Прочти все 5 reports.
-2. Кросс-референс:
-   - Source code vs TODO (источник истины — код).
-   - RFC vs implementation (заметки о gaps).
-   - Наш код vs reference implementations (сравни паттерны).
-   - Memory vs current state (обнови memory, если устарело).
-3. Identify conflicts — где источники расходятся.
-4. Synthesize в финальный отчёт.
+1. Read all 5 reports.
+2. Cross-reference:
+   - Source code vs TODOs (code is the source of truth).
+   - RFCs vs implementation (note gaps).
+   - Our code vs reference implementations (compare patterns).
+   - Memory vs current state (update memory if stale).
+3. Identify conflicts — where sources disagree.
+4. Synthesize into the final report.
 
 ### Step 5: Deliver report
 
-Формат — фиксированный (см. ниже).
+Format is fixed (see below).
 
 ### Step 6: Save to memory
 
-Если memory доступна:
+If memory is available:
 
 ```
 memory_retain("# Research: {topic} — Summary (YYYY-MM-DD)
@@ -132,11 +151,11 @@ Key files: ...")
 
 ### Step 7: Cleanup
 
-Shutdown teammates → `TeamDelete()`.
+Shut down teammates → `TeamDelete()`.
 
 ---
 
-## Шаблоны промптов teammates
+## Teammate prompt templates
 
 ### Teammate 1: code-researcher (subagent_type: Explore)
 
@@ -149,16 +168,16 @@ KEYWORDS: {$KEYWORDS}
 MEMORY CONTEXT: {$MEMORY_RECALL_RESULTS}
 
 === SCOPE ===
-- Primary code dirs (ask CLAUDE.md или ищи в обычных местах: src/, packages/, services/, apps/, lib/)
+- Primary code dirs (check CLAUDE.md or look in usual places: src/, packages/, services/, apps/, lib/)
 - Tests (*.test.ts, *.spec.ts, __tests__/)
 - Configs that affect behavior
 
 === STRATEGY ===
-1. Glob "**/README.md" в основных code-папках — найди релевантные модули.
-2. Grep keywords во всём source — найди реализации.
-3. Read public API surface (index.ts, mod.rs, __init__.py) релевантных модулей.
-4. Check tests — какие сценарии покрыты, какие нет.
-5. Note configs (env example, package.json scripts) если влияют.
+1. Glob "**/README.md" in main code folders — find relevant modules.
+2. Grep keywords across source — find implementations.
+3. Read public API surface (index.ts, mod.rs, __init__.py) of relevant modules.
+4. Check tests — which scenarios are covered, which aren't.
+5. Note configs (env example, package.json scripts) if they affect behavior.
 
 === OUTPUT ===
 
@@ -181,7 +200,7 @@ MEMORY CONTEXT: {$MEMORY_RECALL_RESULTS}
 
 ```
 You are a DOCS & DESIGN research agent.
-Search ONLY documentation — RFCs, design docs, ADR, guides, README. No source code, no TODO.
+Search ONLY documentation — RFCs, design docs, ADRs, guides, READMEs. No source code, no TODOs.
 
 TOPIC, KEYWORDS, MEMORY CONTEXT — same as above.
 
@@ -218,7 +237,7 @@ TOPIC, KEYWORDS, MEMORY CONTEXT — same as above.
 
 ```
 You are a STATUS & TODO research agent.
-Search ONLY TODO files and project status docs to determine "что сделано, что осталось".
+Search ONLY TODO files and project status docs to determine "what's done, what's left".
 
 TOPIC, KEYWORDS — same.
 
@@ -229,7 +248,7 @@ TOPIC, KEYWORDS — same.
 
 === STRATEGY ===
 
-TODO files often LARGE (1000+ lines). NEVER read them whole.
+TODO files are often LARGE (1000+ lines). NEVER read them whole.
 1. Grep keywords in TODO files — find sections.
 2. Read relevant sections with offset/limit (±50 lines around match).
 3. Extract: [x] done items, [ ] remaining, "Gaps", "Backend endpoints needed".
@@ -313,7 +332,7 @@ TOPIC, KEYWORDS — same.
    memory_recall("{kw1} bugs known issues")
    memory_reflect("What patterns emerge for {topic}?")
 
-   Если memory не настроена — пропусти и явно скажи в output.
+   If memory is not configured — skip and say so explicitly in output.
 
 2. Research directory (if exists):
    research/, research/projects/, research/architecture/, research/reports/
@@ -347,7 +366,7 @@ TOPIC, KEYWORDS — same.
 
 ---
 
-## Финальный отчёт (формат)
+## Final report (format)
 
 ```markdown
 # Research Report: {topic}
@@ -359,7 +378,7 @@ TOPIC, KEYWORDS — same.
 
 ## Executive Summary
 
-2-3 предложения: что нашли, что есть, чего нет.
+2-3 sentences: what we found, what exists, what's missing.
 
 ## Current State
 
@@ -400,30 +419,30 @@ TOPIC, KEYWORDS — same.
 
 ---
 
-## Tips для leader'а
+## Tips for the leader
 
-1. **Memory recall сначала** — бесплатно, может уже содержать ответ.
-2. **Хорошие keywords** — каждый агент grep'ит по ним; чем точнее, тем меньше шума.
-3. **Передавай memory результаты teammates** — иначе они дублируют работу.
-4. **Не дублируй scope** — у каждого агента свой эксклюзивный домен.
-5. **Synthesis = ценность** — не просто склеить отчёты, а найти противоречия и инсайты.
-6. **Сохраняй findings** — следующий research по близкой теме станет короче.
-7. **Verify TODO claims против кода** — главная задача status-researcher'а.
+1. **Memory recall first** — free, may already hold the answer.
+2. **Good keywords matter** — every agent greps with them; precise = less noise.
+3. **Pass memory results to teammates** — otherwise they duplicate work.
+4. **Don't overlap scopes** — each agent owns an exclusive domain.
+5. **Synthesis = value** — don't just glue reports together; surface conflicts and insights.
+6. **Save findings** — the next research on a related topic will be shorter.
+7. **Verify TODO claims against code** — that's the status-researcher's main job.
 
 ---
 
-## Связанные скиллы
+## Related skills
 
-- [`team`](../team/SKILL.md) — базовые правила (Mode A/B, cleanup, file ownership).
-- [`audit`](../audit/SKILL.md) — research → audit для проверки качества.
-- [`sprint`](../sprint/SKILL.md) — после research → план + волновое исполнение.
-- [`rfc`](../rfc/SKILL.md) — research часто завершается RFC.
-- [`do`](../do/SKILL.md) — orchestrator цепляет research → write-doc → build.
+- [`team`](../team/SKILL.md) — base rules (Mode A/B, cleanup, file ownership).
+- [`audit`](../audit/SKILL.md) — research → audit for quality checks.
+- [`sprint`](../sprint/SKILL.md) — after research → plan + wave execution.
+- [`rfc`](../rfc/SKILL.md) — research often ends in an RFC.
+- [`do`](../do/SKILL.md) — orchestrator chains research → write-doc → build.
 
 ## Anti-patterns
 
-- **Не запускай 5 агентов на простой вопрос** — lightweight mode для этого.
-- **Не разделяй scope нечётко** — пересекающиеся scope = дублированная работа.
-- **Не верь только TODO** — verify в коде.
-- **Не выводи raw outputs всех 5 агентов** — synthesis сам по себе ценность.
-- **Не удаляй team молча** — спроси пользователя перед `TeamDelete`.
+- **Don't spawn 5 agents for a simple question** — that's what lightweight mode is for.
+- **Don't split scope loosely** — overlapping scopes = duplicated work.
+- **Don't trust TODOs alone** — verify in code.
+- **Don't dump raw outputs from all 5 agents** — synthesis is the value.
+- **Don't `TeamDelete` silently** — ask the user first.

@@ -1,13 +1,13 @@
 ---
 name: setup
-description: Интерактивный wizard, который конфигурирует CC-templates под конкретный проект. Спрашивает issue tracker, build/test команды, пути к docs/RFC/TODO и доменный glossary; записывает ответы в `docs/agents/*.md` (и опционально создаёт `CONTEXT.md` + `LANGUAGE.md` в корне). Все остальные скиллы (research, audit, sprint, ...) читают эти файлы вместо хардкода. Запускай один раз на проект — или повторно, когда структура поменялась. Триггеры — "setup project", "init cc-templates", "configure my skills", "поставь скиллы под проект", "/setup".
+description: Interactive wizard that configures CC-templates for the current project. Asks about the issue tracker, build/test commands, docs/RFC/TODO paths, and domain glossary; writes answers to `docs/agents/*.md` and optionally creates a starter `CONTEXT.md` in the project root. All other skills (research, audit, sprint, ...) read these files instead of hardcoding paths. Run once per project — or re-run when structure changes. Triggers — "setup project", "init cc-templates", "configure my skills", "поставь скиллы под проект", "/setup".
 disable-model-invocation: true
 allowed-tools: Read Write Edit Bash(git *) Bash(find *) Bash(cat *) Bash(ls *) Bash(test *)
 ---
 
 # Setup CC-Templates
 
-One-time interactive wizard. Output: `docs/agents/*.md` + (optional) `CONTEXT.md`, `LANGUAGE.md`.
+One-time interactive wizard. Output: `docs/agents/*.md` + (optional) `CONTEXT.md`.
 Other skills read these files via `@docs/agents/...` imports — no hardcode in skill bodies.
 
 ## When to invoke
@@ -68,22 +68,21 @@ Auto-detect:
 Ask user to confirm or correct paths for: RFC dir, TODO file(s), ADR dir, architecture docs, known-issues file.
 Write `docs/agents/paths.md` from `references/PATHS-TEMPLATE.md`.
 
-### Section D — Domain glossary (CONTEXT.md + LANGUAGE.md)
+### Section D — Domain glossary (CONTEXT.md)
 
-Check `test -f CONTEXT.md` and `test -f LANGUAGE.md`.
+Check `test -f CONTEXT.md`.
 
-If **both exist** — note paths in `docs/agents/domain.md`, skip creation.
+If **exists** — note path in `docs/agents/domain.md`, skip creation.
 
 If **missing** — ask user:
 
-> "Want me to create starter CONTEXT.md (ubiquitous language — domain terms)
-> and LANGUAGE.md (architectural vocabulary — layers, patterns)?
-> Both stay empty until you populate them — `/grill-with-docs` helps with that."
+> "Want me to create a starter CONTEXT.md (ubiquitous language — domain terms,
+> relationships, flagged ambiguities)? It stays empty until you populate it —
+> a /grill-style interview helps with that."
 
 If yes:
 - Copy `references/CONTEXT-TEMPLATE.md` → project `CONTEXT.md`
-- Copy `references/LANGUAGE-TEMPLATE.md` → project `LANGUAGE.md`
-- Note in `docs/agents/domain.md`: where they live + when to update them
+- Note in `docs/agents/domain.md`: where it lives + when to update it
 
 ## Output structure
 
@@ -95,8 +94,7 @@ If yes:
 │       ├── build-config.md
 │       ├── paths.md
 │       └── domain.md
-├── CONTEXT.md                  ← ubiquitous language (created if missing)
-└── LANGUAGE.md                 ← architectural vocabulary (created if missing)
+└── CONTEXT.md                  ← ubiquitous language (created if missing)
 ```
 
 ## Wire into CLAUDE.md (final step, requires user confirmation)
@@ -116,7 +114,6 @@ This project is configured with CC-templates skills. Metadata:
 @docs/agents/paths.md
 @docs/agents/domain.md
 @CONTEXT.md
-@LANGUAGE.md
 ```
 
 `@imports` cause Claude to load these on every session — no need to re-read.

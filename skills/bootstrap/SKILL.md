@@ -1,18 +1,18 @@
 ---
 name: bootstrap
-description: Разворачивает авторский стартовый скаффолд Claude Code в новом или существующем проекте — создаёт CLAUDE.md по шаблону, папку guides/ с авторскими гайдами (Git Flow, CLAUDE.md best practices) и guides/INDEX.md. Используется, когда пользователь начинает новый проект и хочет поставить стандартную базу Claude Code, либо добавляет эти гайды в существующий проект. Триггеры (EN/RU) — "bootstrap project", "init claude baseline", "install my guides", "scaffold claude code", "поставь мои гайды", "разверни базу", "установи базовый CLAUDE.md", "подготовь проект под claude", "засетапь проект".
+description: Deploys the author's Claude Code starter scaffold into a new or existing project — creates a CLAUDE.md from the template, a guides/ folder with author guides (Git Flow, CLAUDE.md best practices), and guides/INDEX.md. Use when the user starts a new project and wants the standard Claude Code baseline, or when adding these guides to an existing project. Triggers (EN/RU) — "bootstrap project", "init claude baseline", "install my guides", "scaffold claude code", "поставь мои гайды", "разверни базу", "установи базовый CLAUDE.md", "подготовь проект под claude", "засетапь проект".
 ---
 
 # Bootstrap Claude Project
 
-Разворачивает в текущем проекте базовый набор артефактов Claude Code:
-`CLAUDE.md`, `guides/` с авторскими гайдами, `guides/INDEX.md`.
+Deploys the baseline Claude Code artifacts into the current project:
+`CLAUDE.md`, `guides/` with author guides, `guides/INDEX.md`.
 
-Ресурсы skill'а живут рядом с этим SKILL.md, в `resources/`:
+The skill's resources live next to this SKILL.md, in `resources/`:
 
 ```
 ~/.claude/skills/bootstrap/
-├── SKILL.md           ← ты сейчас читаешь
+├── SKILL.md           ← you are reading this
 └── resources/
     ├── guides/
     │   ├── CLAUDE-MD-GUIDE.ru.md
@@ -22,44 +22,44 @@ description: Разворачивает авторский стартовый с
         └── CLAUDE.md.template
 ```
 
-Если skill вызван из репо-источника (`CC-templates/skills/bootstrap`),
-пути тоже валидны относительно этой же директории — используй абсолютный путь до
-директории этого SKILL.md.
+If the skill is invoked from the source repo (`CC-templates/skills/bootstrap`),
+the same paths are valid relative to that directory — use the absolute path to
+the directory containing this SKILL.md.
 
 ---
 
-## Когда использовать
+## When to use
 
-- Пользователь начинает новый проект и просит «развернуть базу», «поставить гайды», «bootstrap».
-- Существующий проект без `CLAUDE.md` или без `guides/`, пользователь хочет привести к стандарту.
-- Пользователь явно упомянул один из триггеров из `description`.
+- The user starts a new project and asks to "deploy the baseline", "install the guides", "bootstrap".
+- An existing project lacks `CLAUDE.md` or `guides/`, and the user wants it brought up to standard.
+- The user explicitly mentions one of the triggers from `description`.
 
-## Когда НЕ использовать
+## When NOT to use
 
-- Текущий cwd — это сам репозиторий `CC-templates` (он и есть источник, скаффолдить его не надо).
-  → Проверь по наличию файлов: `CLAUDE.md` + `skills/bootstrap/` в cwd.
-- В проекте уже есть `CLAUDE.md` **и** полная `guides/` — нечего делать.
-  → Скажи пользователю и выйди.
-
----
-
-## Входные данные (уточни перед работой)
-
-Спроси единым вопросом три параметра, если пользователь не указал явно:
-
-1. **Target path** — куда ставить. По умолчанию — текущий `pwd`.
-2. **Какие гайды** — `all` (по умолчанию) / `git-flow` / `claude-md`.
-3. **Что с существующим `CLAUDE.md`** — `skip` (не трогать) / `append` (добавить блок
-   «См. гайды») / `replace` (пересоздать по шаблону, старый сохранить как `CLAUDE.md.bak`).
-   По умолчанию — `append`. Если `CLAUDE.md` нет — вопрос не задаём, создаём из шаблона.
+- The current cwd is the `CC-templates` repo itself (it's the source — no need to scaffold it).
+  → Detect by checking for `CLAUDE.md` + `skills/bootstrap/` in cwd.
+- The project already has both `CLAUDE.md` **and** a complete `guides/` — nothing to do.
+  → Tell the user and exit.
 
 ---
 
-## Процесс
+## Input (clarify before running)
 
-### 1. Ориентация
+Ask the three parameters in one question if the user hasn't specified them:
 
-Выполни:
+1. **Target path** — where to install. Defaults to current `pwd`.
+2. **Which guides** — `all` (default) / `git-flow` / `claude-md`.
+3. **What to do with existing `CLAUDE.md`** — `skip` (leave alone) / `append` (add a
+   "See guides" block) / `replace` (recreate from template, save the old one as `CLAUDE.md.bak`).
+   Default — `append`. If `CLAUDE.md` is missing — don't ask, create from the template.
+
+---
+
+## Process
+
+### 1. Orient
+
+Run:
 
 ```bash
 pwd
@@ -69,90 +69,90 @@ test -f CLAUDE.md && echo "CLAUDE.md exists" || echo "no CLAUDE.md"
 test -d guides && echo "guides/ exists" || echo "no guides/"
 ```
 
-Проверки:
-- Если **нет `.git`** — предупреди пользователя: «гайды подразумевают git, рекомендую `git init -b main` перед продолжением». Спроси, продолжать ли без git.
-- Если cwd == корень `CC-templates` (признак: есть `skills/bootstrap/SKILL.md`) — откажись с сообщением «это сам источник, скаффолдить его не нужно».
+Checks:
+- If **no `.git`** — warn the user: "the guides assume git, recommend `git init -b main` before continuing." Ask whether to proceed without git.
+- If cwd == root of `CC-templates` (signature: `skills/bootstrap/SKILL.md` exists) — refuse with "this is the source, no need to scaffold it".
 
-### 2. Собери план
+### 2. Plan
 
-Сформируй короткий план (3–6 строк): что будет создано, что перезаписано, что пропущено. Покажи пользователю и жди подтверждения.
+Build a short plan (3–6 lines): what will be created, what will be overwritten, what will be skipped. Show the user and wait for confirmation.
 
-Пример:
+Example:
 ```
 Buy-in:
-  + CLAUDE.md (создам из шаблона)
-  + guides/CLAUDE-MD-GUIDE.ru.md (скопирую)
-  + guides/GIT-FLOW-GUIDE.ru.md (скопирую)
-  + guides/INDEX.md (создам)
+  + CLAUDE.md (will create from template)
+  + guides/CLAUDE-MD-GUIDE.ru.md (will copy)
+  + guides/GIT-FLOW-GUIDE.ru.md (will copy)
+  + guides/INDEX.md (will create)
 Proceed? [y/n]
 ```
 
-### 3. Выполнение
+### 3. Execute
 
-**Резолвь абсолютный путь ресурсов.** Используй:
+**Resolve the absolute path to resources.** Use:
 ```bash
 SKILL_DIR="$HOME/.claude/skills/bootstrap"
-test -d "$SKILL_DIR/resources" || SKILL_DIR="<абсолютный путь до этого skill в CC-templates>"
+test -d "$SKILL_DIR/resources" || SKILL_DIR="<absolute path to this skill in CC-templates>"
 ```
 
-Если skill был установлен через симлинк на `CC-templates/skills/bootstrap/`, `$HOME/.claude/skills/bootstrap` сработает. Если skill запускается напрямую из репо (без установки) — используй абсолютный путь до папки, в которой лежит этот SKILL.md.
+If the skill was installed via symlink to `CC-templates/skills/bootstrap/`, `$HOME/.claude/skills/bootstrap` works. If the skill is invoked directly from the repo (no install) — use the absolute path to the directory containing this SKILL.md.
 
-**Выполни операции по выбранному сценарию:**
+**Run the operations for the chosen scenario:**
 
 - **CLAUDE.md:**
-  - Если файла нет → `cp "$SKILL_DIR/resources/templates/CLAUDE.md.template" ./CLAUDE.md`, заменить плейсхолдер `<PROJECT_NAME>` на имя директории проекта (`basename "$PWD"`).
-  - Если есть и режим `append` → дописать в конец блок:
+  - File missing → `cp "$SKILL_DIR/resources/templates/CLAUDE.md.template" ./CLAUDE.md`, then replace the `<PROJECT_NAME>` placeholder with the project directory name (`basename "$PWD"`).
+  - File present and mode `append` → append the block:
     ```
-    ## Справочник
+    ## Reference
 
-    См. [`guides/INDEX.md`](guides/INDEX.md) — Git Flow, CLAUDE.md best practices.
+    See [`guides/INDEX.md`](guides/INDEX.md) — Git Flow, CLAUDE.md best practices.
     ```
-    (Дедуплицируй: если блок уже есть, пропусти.)
-  - Если режим `replace` → `mv CLAUDE.md CLAUDE.md.bak && cp <template> CLAUDE.md`.
-  - Если режим `skip` → ничего не делай.
+    (Deduplicate: if the block is already there, skip.)
+  - Mode `replace` → `mv CLAUDE.md CLAUDE.md.bak && cp <template> CLAUDE.md`.
+  - Mode `skip` → do nothing.
 
-- **guides/ папка:** создай `mkdir -p guides`.
+- **guides/ folder:** `mkdir -p guides`.
 
-- **Копирование гайдов:**
-  - `all` → скопируй оба `.ru.md` из `$SKILL_DIR/resources/guides/` в `./guides/`.
-  - `git-flow` → только `GIT-FLOW-GUIDE.ru.md`.
-  - `claude-md` → только `CLAUDE-MD-GUIDE.ru.md`.
-  - Если в `./guides/` уже есть такой файл — спроси: overwrite / skip / diff. По умолчанию skip.
+- **Copy guides:**
+  - `all` → copy both `.ru.md` files from `$SKILL_DIR/resources/guides/` into `./guides/`.
+  - `git-flow` → only `GIT-FLOW-GUIDE.ru.md`.
+  - `claude-md` → only `CLAUDE-MD-GUIDE.ru.md`.
+  - If `./guides/` already has the file — ask: overwrite / skip / diff. Default skip.
 
-- **guides/INDEX.md:** из `resources/guides/INDEX.md.template`, оставь строки только для скопированных гайдов.
+- **guides/INDEX.md:** from `resources/guides/INDEX.md.template`, keep only the lines for guides that were actually copied.
 
-### 4. Отчёт
+### 4. Report
 
-Покажи итог:
+Show the result:
 ```
-✓ CLAUDE.md            создан
-✓ guides/               создана
-✓ guides/INDEX.md      создан
+✓ CLAUDE.md            created
+✓ guides/              created
+✓ guides/INDEX.md      created
 ✓ guides/GIT-FLOW-GUIDE.ru.md
 ✓ guides/CLAUDE-MD-GUIDE.ru.md
 ```
 
-Напомни:
-- «Отредактируй `CLAUDE.md` — раздел "Что это за проект" сейчас плейсхолдер.»
-- «Если в репо ещё нет коммита — закомить: `git add . && git commit -m "chore: add Claude Code baseline scaffold"`.»
+Remind the user:
+- "Edit `CLAUDE.md` — the 'What this project is' section is still a placeholder."
+- "If the repo has no commit yet — commit: `git add . && git commit -m \"chore: add Claude Code baseline scaffold\"`."
 
 ---
 
-## Идемпотентность и безопасность
+## Idempotency and safety
 
-- **Никогда не перезаписывай существующие файлы без явного подтверждения.**
-- При `replace` для CLAUDE.md — всегда сохраняй `CLAUDE.md.bak`.
-- **Не коммить автоматически.** Скаффолд оставляет изменения в рабочем дереве, коммит — решение пользователя.
-- Не трогай `.git/`, `node_modules/`, `vendor/` и другие служебные директории.
+- **Never overwrite existing files without explicit confirmation.**
+- For `replace` on CLAUDE.md — always save `CLAUDE.md.bak`.
+- **Don't auto-commit.** The scaffold leaves changes in the working tree; the commit is the user's call.
+- Don't touch `.git/`, `node_modules/`, `vendor/`, or other system directories.
 
-## Ошибки и восстановление
+## Errors and recovery
 
-| Симптом | Диагноз | Действие |
+| Symptom | Diagnosis | Action |
 |---|---|---|
-| `resources/` не найдена | Skill повреждён или не установлен | Сообщи путь, который пробовал, и попроси переустановить через `scripts/install-skill.sh bootstrap`. |
-| `guides/<file>.ru.md` уже существует | Идемпотентный повторный запуск | Покажи diff; по умолчанию skip. |
-| cwd — `CC-templates` | Запуск в самом источнике | Отказ с сообщением. |
+| `resources/` not found | Skill is broken or not installed | Report the path you tried and ask to reinstall via `scripts/install-skill.sh bootstrap`. |
+| `guides/<file>.ru.md` already exists | Idempotent re-run | Show diff; default skip. |
+| cwd is `CC-templates` | Run inside the source itself | Refuse with a message. |
 
-## Ссылки на примеры
+## Example references
 
-См. `examples/full-setup.md` рядом с этим SKILL.md — пример полного диалога.
+See `examples/full-setup.md` next to this SKILL.md — a full dialogue example.

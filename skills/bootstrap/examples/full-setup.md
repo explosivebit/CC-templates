@@ -1,82 +1,82 @@
-# Пример: полный bootstrap нового проекта
+# Example: full bootstrap of a new project
 
-Демонстрация диалога, в котором пользователь разворачивает базу в свежесозданной папке.
+Demonstration of a dialogue where the user deploys the baseline into a freshly created folder.
 
 ---
 
-**Пользователь:**
-> Поставь мои гайды в этот проект.
+**User:**
+> Install my guides into this project.
 
-**Claude (через skill `bootstrap`):**
+**Claude (via the `bootstrap` skill):**
 
 ```
-Ориентация:
+Orientation:
   cwd: /Users/me/Work/new-api-service
-  .git: найдена (ветка main, 0 коммитов)
-  CLAUDE.md: отсутствует
-  guides/: отсутствует
+  .git: found (branch main, 0 commits)
+  CLAUDE.md: missing
+  guides/: missing
 
-План:
-  + CLAUDE.md                          (из шаблона, плейсхолдер <PROJECT_NAME> → new-api-service)
-  + guides/                            (создам)
-  + guides/CLAUDE-MD-GUIDE.ru.md       (скопирую)
-  + guides/GIT-FLOW-GUIDE.ru.md        (скопирую)
-  + guides/INDEX.md                    (создам)
+Plan:
+  + CLAUDE.md                          (from template, placeholder <PROJECT_NAME> → new-api-service)
+  + guides/                            (will create)
+  + guides/CLAUDE-MD-GUIDE.ru.md       (will copy)
+  + guides/GIT-FLOW-GUIDE.ru.md        (will copy)
+  + guides/INDEX.md                    (will create)
 
-Поехали? [y/n]
+Proceed? [y/n]
 ```
 
-**Пользователь:**
+**User:**
 > y
 
 **Claude:**
 ```
-✓ guides/                                   создана
-✓ guides/GIT-FLOW-GUIDE.ru.md               скопирован
-✓ guides/CLAUDE-MD-GUIDE.ru.md              скопирован
-✓ guides/INDEX.md                           создан
-✓ CLAUDE.md                                  создан из шаблона
+✓ guides/                                   created
+✓ guides/GIT-FLOW-GUIDE.ru.md               copied
+✓ guides/CLAUDE-MD-GUIDE.ru.md              copied
+✓ guides/INDEX.md                           created
+✓ CLAUDE.md                                  created from template
 
-Следующие шаги:
-  - Открой CLAUDE.md, заполни блок «Что это за проект» и «Как работать».
-  - Если хочешь зафиксировать базу: git add . && git commit -m "chore: add Claude Code baseline scaffold"
+Next steps:
+  - Open CLAUDE.md, fill in "What this project is" and "How to work with it".
+  - To capture the baseline: git add . && git commit -m "chore: add Claude Code baseline scaffold"
 ```
 
 ---
 
-## Пример: добавить блок гайдов в существующий CLAUDE.md
+## Example: append a guides block to an existing CLAUDE.md
 
-**Пользователь:**
-> У меня уже есть CLAUDE.md, но хочу добавить гайды.
+**User:**
+> I already have CLAUDE.md, but I want to add the guides.
 
 **Claude:**
 ```
-Нашёл существующий CLAUDE.md. Режим: append — добавлю только блок «Справочник»
-со ссылкой на guides/INDEX.md. Старый контент не трогаю.
+Found existing CLAUDE.md. Mode: append — will only add a "Reference" block
+linking to guides/INDEX.md. Old content untouched.
 
-  + guides/ (создам)
+  + guides/ (will create)
   + guides/CLAUDE-MD-GUIDE.ru.md
   + guides/GIT-FLOW-GUIDE.ru.md
   + guides/INDEX.md
-  ~ CLAUDE.md (append раздела «Справочник» — если его ещё нет)
+  ~ CLAUDE.md (append "Reference" section — only if not already there)
 
 Proceed? [y/n]
 ```
 
 ---
 
-## Пример: только git-flow
+## Example: git-flow only
 
-**Пользователь:**
-> Мне нужен только git-flow guide, без CLAUDE.md правил писать.
+**User:**
+> I only need the git-flow guide, no CLAUDE.md rules.
 
 **Claude:**
 ```
-Режим: только git-flow. CLAUDE.md не трогаю.
+Mode: git-flow only. CLAUDE.md untouched.
 
-  + guides/ (создам)
+  + guides/ (will create)
   + guides/GIT-FLOW-GUIDE.ru.md
-  + guides/INDEX.md (только строка про git-flow)
+  + guides/INDEX.md (only the git-flow line)
 
 Proceed? [y/n]
 ```

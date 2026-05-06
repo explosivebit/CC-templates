@@ -1,37 +1,53 @@
 ---
 name: do
-description: Мета-оркестратор — принимает задачу на естественном языке, классифицирует её (research / docs / feature / review / bug / refactor / status), строит pipeline из других скиллов (research → write-doc → wave-sprint → audit), показывает план пользователю, исполняет с approval-чекпойнтами. Используется, когда пользователь хочет «сделай X» без указания конкретного скилла. Триггеры (EN/RU) — "do X", "implement and document", "research and write RFC", "сделай", "разберись и реализуй", "проведи ревью ветки", "/do".
+description: Meta-orchestrator — takes a natural-language task, classifies it (research / docs / feature / review / bug / refactor / status), builds a pipeline from other skills (research → write-doc → wave-sprint → audit), shows the plan, and executes with approval checkpoints. Use when the user wants "do X" without naming a specific skill. Triggers (EN/RU) — "do X", "implement and document", "research and write RFC", "сделай", "разберись и реализуй", "проведи ревью ветки", "/do".
 ---
 
 # Task Orchestrator
 
-«Мета-команда»: принимает любую формулировку задачи и сам собирает pipeline из других
-скиллов. Сам не делает работу — делегирует. Цель — снять с пользователя ментальный
-overhead «какой скилл вызвать»; пользователь говорит «что», оркестратор решает «как».
+A "meta-command": takes any task phrasing and assembles a pipeline from other
+skills. Doesn't do the work itself — delegates. Goal: remove the mental overhead
+of "which skill do I call?"; the user says *what*, the orchestrator decides *how*.
 
 ---
 
-## Когда использовать
+## Project context (read first)
 
-- Пользователь описал задачу одной фразой и не указал конкретный скилл.
-- Задача очевидно требует нескольких шагов (research + RFC, research + sprint + audit, etc.).
-- Пользователь сказал: «сделай», «разберись», «проведи ревью», «реализуй и задокументируй».
+`/do` is an orchestrator. It needs every available config source:
 
-## Когда НЕ использовать
+- `@docs/agents/paths.md` — where RFCs, TODOs, sources live
+- `@docs/agents/build-config.md` — build/test/lint commands
+- `@docs/agents/issue-tracker.md` — which tracker
+- `@CONTEXT.md` — domain glossary
 
-- Конкретный скилл явно подходит и пользователь его указал — вызывай его напрямую.
-- Тривиальная задача (read file, fix typo) — не оркеструй, просто сделай.
-- Один shot research / один shot audit — вызывай скилл напрямую.
+Check with `test -d docs/agents`. If present — sub-skills (`research`, `sprint`,
+`audit`, `briefing`, ...) pick up the specifics automatically through their own
+`@imports`; you just pass them the task. If `docs/agents/` is missing — sub-skills
+auto-detect through project files (glob, `package.json`, etc.).
+
+---
+
+## When to use
+
+- User described a task in one sentence and didn't name a specific skill.
+- The task obviously needs multiple steps (research + RFC, research + sprint + audit, etc.).
+- User said: "сделай", "разберись", "проведи ревью", "реализуй и задокументируй".
+
+## When NOT to use
+
+- A specific skill clearly fits and the user named it — call it directly.
+- Trivial task (read file, fix typo) — don't orchestrate, just do it.
+- Single-shot research / single-shot audit — call the skill directly.
 
 ---
 
 ## Workflow
 
-### Phase 1: UNDERSTAND — классификация
+### Phase 1: UNDERSTAND — classification
 
-Парси `$ARGUMENTS` в одну или несколько категорий:
+Parse `$ARGUMENTS` into one or more categories:
 
-| Категория | Сигналы | Pipeline |
+| Category | Signals | Pipeline |
 |---|---|---|
 | **research** | "разберись", "изучи", "что есть", "какой статус", "сравни" | research → report |
 | **documentation** | "напиши RFC", "сделай guide", "доку", "report", "ADR" | research → write-doc |
@@ -42,58 +58,59 @@ overhead «какой скилл вызвать»; пользователь го
 | **analysis** | "анализ", "analyze", "gap analysis", "state of" | research → write-doc (report) |
 | **status** | "статус", "что сделано", "прогресс" | lightweight research (3 explore) → report |
 
-**Несколько категорий допустимы**:
+**Multiple categories are fine**:
 
-- "спроектируй webhooks v2 и напиши RFC" = research + documentation
-- "добавь SCIM и задокументируй" = feature + documentation
+- "design webhooks v2 and write an RFC" = research + documentation
+- "add SCIM and document it" = feature + documentation
 
 ### Phase 2: RECALL
 
-Если есть memory — быстрая проверка:
+If memory is available — quick check:
 
 ```
 memory_recall("$TOPIC")
 memory_recall("$TOPIC architecture decisions")
 ```
 
-Часто research уже сделан раньше — можно skip-ать.
+Often research was already done — can be skipped.
 
-### Phase 3: PLAN — постройка pipeline
+### Phase 3: PLAN — build the pipeline
 
-На основе классификации выбери template (см. ниже). Покажи pipeline пользователю **до** execution:
+Pick a template (see below) based on classification. Show the pipeline to the user
+**before** execution:
 
 ```markdown
 ## Task: $ARGUMENTS
 
-Классифицировано как: [{categories}]
+Classified as: [{categories}]
 
 ### Proposed Pipeline:
 
-Step 1: RESEARCH — multi-agent research (5 агентов параллельно: code, docs, status, reference, knowledge)
+Step 1: RESEARCH — multi-agent research (5 agents in parallel: code, docs, status, reference, knowledge)
    → Output: Research Report
 
-Step 2: WRITE-DOC (RFC) — RFC по результатам research'а
+Step 2: WRITE-DOC (RFC) — RFC based on research findings
    → Output: RFC-XXX-WEBHOOKS-V2.md
 
 Step 3: SAVE — File + Memory + RFC-INDEX update
 
 Estimated agents: 7 (5 research + 2 doc)
-Approval checkpoints: после research, после draft
+Approval checkpoints: after research, after draft
 
 Proceed? (yes / adjust pipeline / skip steps)
 ```
 
-Жди ответа. Пользователь может:
+Wait for the answer. The user can:
 
 - **"yes" / "давай" / "1"** → execute all
 - **"skip research"** → jump to step 2
 - **"only research"** → stop after step 1
-- Скорректировать любой шаг
+- Adjust any step
 
-### Phase 4: EXECUTE — пошагово
+### Phase 4: EXECUTE — step by step
 
-Выполняй steps sequential. Output одного шага → input следующего (передавай как краткий
-summary, не raw данные — иначе context overflow).
+Run steps sequentially. Output of one step → input of the next (pass as a brief
+summary, not raw data — otherwise context overflows).
 
 ---
 
@@ -101,11 +118,11 @@ summary, не raw данные — иначе context overflow).
 
 ### Template A: RESEARCH → REPORT (pure research)
 
-**Для**: "разберись", "изучи", "какой статус", "сравни"
+**For**: "разберись", "изучи", "what's the status", "сравни"
 
 ```
 Step 1: RESEARCH
-  → [`research`](../research/SKILL.md), 5 агентов
+  → [`research`](../research/SKILL.md), 5 agents
   → Output: 5 reports
 
 Step 2: SYNTHESIZE
@@ -113,64 +130,64 @@ Step 2: SYNTHESIZE
 
 Step 3: DELIVER
   → Present report
-  → memory_retain (если memory есть)
+  → memory_retain (if memory exists)
 
 Step 4: CLEANUP
 ```
 
 ### Template B: RESEARCH → WRITE-DOC (research + docs)
 
-**Для**: "напиши RFC", "сделай guide", "report"
+**For**: "write RFC", "make a guide", "report"
 
 ```
-Step 1: RESEARCH (как Template A) → research report
+Step 1: RESEARCH (like Template A) → research report
 
 Step 2: WRITE-DOC
-  → Определи doc type (RFC / guide / report / ADR)
-  → Определи путь и следующий номер (см. [`rfc`](../rfc/SKILL.md))
-  → Напиши документ, используя research как input
-  → Следуй формату из [`rfc`](../rfc/SKILL.md)
+  → Determine doc type (RFC / guide / report / ADR)
+  → Determine path and next number (see [`rfc`](../rfc/SKILL.md))
+  → Write the doc, using research as input
+  → Follow the format from [`rfc`](../rfc/SKILL.md)
 
 Step 3: APPROVAL CHECKPOINT
-  → Покажи draft пользователю
+  → Show draft to user
   → Wait: approve / edit / reject
 
-Step 4: SAVE (только после approval)
+Step 4: SAVE (only after approval)
   → Write file
   → memory_retain summary
-  → Update RFC-INDEX (если RFC)
-  → Update TODO (если применимо)
+  → Update RFC-INDEX (if RFC)
+  → Update TODO (if applicable)
 
 Step 5: CLEANUP
 ```
 
 ### Template C: RESEARCH → PLAN → WAVE-SPRINT (feature implementation)
 
-**Для**: "добавь", "реализуй", "implement"
+**For**: "add", "implement", "реализуй"
 
 ```
-Step 1: RESEARCH (как Template A, focus на implementation context)
-  → Что есть, что нужно, reference patterns
+Step 1: RESEARCH (like Template A, focused on implementation context)
+  → What exists, what's needed, reference patterns
 
 Step 2: PLAN
-  → На основе research → план через [`sprint`](../sprint/SKILL.md) Step 2
+  → Plan from research → via [`sprint`](../sprint/SKILL.md) Step 2
   → File ownership map
-  → Task breakdown (5-6 на teammate)
+  → Task breakdown (5-6 per teammate)
   → Dependencies
 
 Step 3: APPROVAL CHECKPOINT
-  → Покажи план
+  → Show plan
   → Wait approval
 
 Step 4: WAVE-SPRINT execute
   → [`sprint`](../sprint/SKILL.md) Step 4 — wave-by-wave
-  → Backend, frontend, tests teammates с research context
+  → Backend, frontend, tests teammates with research context
 
 Step 5: VERIFY
   → typecheck, build, tests (project-specific commands)
 
-Step 6: DOC (опционально, если задача включала docs)
-  → Update TODO с [x]
+Step 6: DOC (optional, if the task included docs)
+  → Update TODO with [x]
   → memory_retain decisions
   → Update RFC (Implementation Log + Insights)
 
@@ -179,15 +196,15 @@ Step 7: CLEANUP
 
 ### Template D: AUDIT (code review)
 
-**Для**: "ревью", "review", "аудит"
+**For**: "ревью", "review", "аудит"
 
 ```
 Step 1: SCOPE
-  → Определи что review (branch diff, files, PR)
-  → git diff main...HEAD для branch
+  → Determine review target (branch diff, files, PR)
+  → git diff main...HEAD for branch
 
 Step 2: AUDIT
-  → [`audit`](../audit/SKILL.md), 4-6 агентов
+  → [`audit`](../audit/SKILL.md), 4-6 agents
 
 Step 3: SYNTHESIZE
   → Cross-validate, prioritize Critical > High > Medium > Low
@@ -201,26 +218,26 @@ Step 5: CLEANUP
 
 ### Template E: RESEARCH → BUG HUNT (bug investigation)
 
-**Для**: "баг", "не работает", "investigate"
+**For**: "bug", "doesn't work", "investigate"
 
 ```
-Step 1: RESEARCH (focused на область бага)
+Step 1: RESEARCH (focused on the bug area)
   → memory_recall known issues
   → Read KNOWN-ISSUES.md
-  → Понять архитектуру вокруг бага
+  → Understand architecture around the bug
 
 Step 2: BUG HUNT TEAM
-  → Spawn 3-5 teammates, каждый — свою гипотезу:
+  → Spawn 3-5 teammates, each with its own hypothesis:
     · hypothesis-input: validation, parsing
     · hypothesis-state: race condition, mutation
     · hypothesis-config: env mismatch
     · hypothesis-timing: async, ordering
-  → См. [`team`](../team/SKILL.md), Recipe 3.
+  → See [`team`](../team/SKILL.md), Recipe 3.
 
 Step 3: SYNTHESIZE
-  → Какая гипотеза подтверждена? Root cause?
+  → Which hypothesis is confirmed? Root cause?
 
-Step 4: FIX (если простой)
+Step 4: FIX (if simple)
   → Apply fix, add test, verify
 
 Step 5: DOCUMENT
@@ -232,15 +249,15 @@ Step 6: CLEANUP
 
 ### Template F: LIGHTWEIGHT STATUS CHECK
 
-**Для**: "статус", "что сделано", "прогресс"
+**For**: "status", "what's done", "progress"
 
-**Без team** — параллельные sub-агенты:
+**No team** — parallel sub-agents:
 
 ```
-Step 1: PARALLEL SEARCH (3 sub-agents без TeamCreate):
+Step 1: PARALLEL SEARCH (3 sub-agents without TeamCreate):
   → Task(Explore): TODO files for topic
   → Task(Explore): codebase for topic
-  → Task(Explore): memory_recall for topic (если memory есть)
+  → Task(Explore): memory_recall for topic (if memory exists)
 
 Step 2: SYNTHESIZE → status report
 
@@ -249,44 +266,44 @@ Step 3: DELIVER
 
 ---
 
-## Decision Logic (как выбрать template)
+## Decision Logic (template selection)
 
 ```
-1. Парси $ARGUMENTS на сигналы (Phase 1).
+1. Parse $ARGUMENTS for signals (Phase 1).
 
-2. Несколько категорий?
+2. Multiple categories?
    - research signals only → A
    - research + doc → B
    - feature → C
    - review → D
    - bug → E
    - status → F
-   - feature + doc → C, потом добавь doc step из B
-   - research + feature → A, потом C с research как input
+   - feature + doc → C, then add doc step from B
+   - research + feature → A, then C with research as input
 
-3. Если неясно — спроси:
-   "Я вижу что ты хочешь {X}. Должен ли я:
-    a) только research и report?
-    b) research, потом написать doc?
-    c) research, plan, и реализовать?
-    d) что-то другое?"
+3. If unclear — ask:
+   "I see you want {X}. Should I:
+    a) only research and report?
+    b) research, then write a doc?
+    c) research, plan, and implement?
+    d) something else?"
 ```
 
 ---
 
 ## Approval Checkpoints
 
-Оркестратор работает автономно, но **обязательно** делает паузу:
+The orchestrator runs autonomously, but **must** pause at:
 
-| Checkpoint | Когда | Что показываем |
+| Checkpoint | When | What we show |
 |---|---|---|
-| **Pipeline approval** | После Phase 3 | Предложенный pipeline + estimated agents |
-| **Research review** | После research | Summary findings, proceed? |
-| **Draft review** | После doc/RFC | Полный документ, approve/edit/reject? |
-| **Implementation plan** | До spawn dev team | File ownership, task breakdown |
-| **Final review** | После имплементации | Diff summary, tests passing? |
+| **Pipeline approval** | After Phase 3 | Proposed pipeline + estimated agents |
+| **Research review** | After research | Summary findings, proceed? |
+| **Draft review** | After doc/RFC | Full document, approve/edit/reject? |
+| **Implementation plan** | Before spawning dev team | File ownership, task breakdown |
+| **Final review** | After implementation | Diff summary, tests passing? |
 
-На каждом — пользователь может:
+At each one the user can:
 
 - **"давай" / "yes"** → continue
 - **"стоп"** → abort
@@ -297,19 +314,19 @@ Step 3: DELIVER
 
 ## Context passing between steps
 
-Output одного шага → input следующего. Правила:
+Output of one step → input of the next. Rules:
 
-- Передавай **summary**, не raw data — иначе context overflow.
-- Каждый шаг сжимает свой output для следующего.
-- Если шагов много — сохраняй промежуточные артефакты в файлы (`research/reports/X.md`),
-  ссылайся на них вместо встраивания в prompt.
+- Pass **summary**, not raw data — otherwise context overflows.
+- Each step compresses its output for the next.
+- For long pipelines — save intermediate artifacts to files (`research/reports/X.md`)
+  and reference them instead of inlining into the prompt.
 
 ```
 RESEARCH output (5 reports → summary)
     ↓
-WRITE-DOC (использует summary для контента)
+WRITE-DOC (uses summary for content)
     ↓
-WAVE-SPRINT (teammates получают research summary + doc как requirements)
+WAVE-SPRINT (teammates get research summary + doc as requirements)
     ↓
 MEMORY (retain synthesis)
 ```
@@ -318,73 +335,73 @@ MEMORY (retain synthesis)
 
 ## Error handling
 
-| Ситуация | Действие |
+| Situation | Action |
 |---|---|
-| Team agent fails | Retry once. Если опять — partial report, спроси пользователя |
-| Research пуст | "Ничего не найдено", спроси расширить keywords |
-| Doc draft отклонён | Получи specific feedback, перепиши |
-| Implementation fails tests | Report failures, attempt fix, если стоп — попроси user |
-| Pipeline затянулся | Repor progress между steps, user может abort |
-| Memory save failed | Report error, продолжай pipeline |
+| Team agent fails | Retry once. If it fails again — partial report, ask user |
+| Research empty | "Nothing found", ask to widen keywords |
+| Doc draft rejected | Get specific feedback, rewrite |
+| Implementation fails tests | Report failures, attempt fix; if blocked — ask user |
+| Pipeline drags on | Report progress between steps; user can abort |
+| Memory save failed | Report error, continue pipeline |
 
 ---
 
-## Integration со связанными скиллами
+## Integration with related skills
 
-Оркестратор не реализует логику сам — делегирует:
+The orchestrator doesn't implement logic itself — it delegates:
 
-| Step | Делегирует | Как |
+| Step | Delegates to | How |
 |---|---|---|
-| RESEARCH | [`research`](../research/SKILL.md) | 5-agent team, тот же recipe |
-| WRITE-DOC | [`rfc`](../rfc/SKILL.md) | RFC format, индекс, log |
+| RESEARCH | [`research`](../research/SKILL.md) | 5-agent team, same recipe |
+| WRITE-DOC | [`rfc`](../rfc/SKILL.md) | RFC format, index, log |
 | PLAN+EXECUTE | [`sprint`](../sprint/SKILL.md) | Wave-by-wave |
 | BUILD from existing plan | [`build`](../build/SKILL.md) | IMPLEMENTATION-PLAN-driven |
 | REVIEW / AUDIT | [`audit`](../audit/SKILL.md) | 4-6 reviewers |
 | TEAM ops (foundation) | [`team`](../team/SKILL.md) | Mode A/B, cleanup |
-| BRIEFING / RECALL | [`briefing`](../briefing/SKILL.md) / [`restore`](../restore/SKILL.md) | Перед/во время pipeline |
+| BRIEFING / RECALL | [`briefing`](../briefing/SKILL.md) / [`restore`](../restore/SKILL.md) | Before/during pipeline |
 
 ---
 
 ## Examples
 
-### "спроектируй webhooks v2 и напиши RFC"
+### "design webhooks v2 and write an RFC"
 
 ```
 Categories: research + documentation
 Template: B (research → write-doc)
 Pipeline:
-  1. research → webhook patterns, наш код, reference (n8n, trigger.dev)
+  1. research → webhook patterns, our code, references (n8n, trigger.dev)
   2. rfc → RFC-XXX-WEBHOOKS-V2.md
   3. SAVE → file + memory + RFC-INDEX
-Checkpoints: после research, после draft
+Checkpoints: after research, after draft
 ```
 
-### "какой статус по SSO SAML?"
+### "what's the status on SSO SAML?"
 
 ```
 Categories: status
 Template: F (lightweight)
 Pipeline:
-  1. 3 параллельных Explore sub-agents → TODO + code + memory
+  1. 3 parallel Explore sub-agents → TODO + code + memory
   2. SYNTHESIZE → status report
-Без team. Быстро.
+No team. Fast.
 ```
 
-### "добавь SCIM provisioning — полный цикл"
+### "add SCIM provisioning — full cycle"
 
 ```
 Categories: feature + documentation
 Template: C + B hybrid
 Pipeline:
-  1. research → SCIM standards, наш IAM, reference
-  2. sprint Step 2 → план
+  1. research → SCIM standards, our IAM, references
+  2. sprint Step 2 → plan
   3. sprint Step 4 → backend-dev + test-writer
   4. rfc → SCIM-INTEGRATION guide
-  5. SAVE → файлы + memory + TODO
-Checkpoints: research, plan, имплементация, doc
+  5. SAVE → files + memory + TODO
+Checkpoints: research, plan, implementation, doc
 ```
 
-### "проведи security ревью текущей ветки"
+### "security review of the current branch"
 
 ```
 Categories: review
@@ -393,37 +410,37 @@ Pipeline:
   1. SCOPE: git diff main...HEAD
   2. audit → security + perf + tests focus
   3. SYNTHESIZE → prioritized findings
-  4. SAVE → memory + KNOWN-ISSUES если найдены баги
+  4. SAVE → memory + KNOWN-ISSUES if bugs found
 ```
 
 ---
 
 ## Tips
 
-1. **Будь конкретен в задаче** — "спроектируй webhooks для real-time event delivery с retry и DLQ" работает лучше чем "сделай webhooks".
-2. **Скажи что хочешь в конце** — "и напиши RFC" говорит оркестратору добавить doc step.
-3. **Можно прервать** — на любом checkpoint измени pipeline.
-4. **Pipeline всегда виден** — пользователь видит план до execute.
-5. **Memory накапливается** — каждый next call по близкой теме быстрее.
-6. **Lightweight by default** — status checks не спавнят полные команды.
+1. **Be specific in the task** — "design webhooks for real-time event delivery with retry and DLQ" beats "do webhooks".
+2. **Say what you want at the end** — "and write an RFC" tells the orchestrator to add a doc step.
+3. **You can interrupt** — at any checkpoint adjust the pipeline.
+4. **Pipeline is always visible** — user sees the plan before execution.
+5. **Memory accumulates** — every next call on a related topic is faster.
+6. **Lightweight by default** — status checks don't spawn full teams.
 
 ---
 
-## Связанные скиллы
+## Related skills
 
 - [`research`](../research/SKILL.md) — research step.
 - [`rfc`](../rfc/SKILL.md) — write-doc step.
 - [`sprint`](../sprint/SKILL.md) — implementation step.
-- [`build`](../build/SKILL.md) — если research уже завершён и есть IMPLEMENTATION-PLAN.
+- [`build`](../build/SKILL.md) — when research is done and an IMPLEMENTATION-PLAN exists.
 - [`audit`](../audit/SKILL.md) — review step.
-- [`team`](../team/SKILL.md) — фундамент для всех team ops.
-- [`restore`](../restore/SKILL.md) — recall перед сложным pipeline.
-- [`briefing`](../briefing/SKILL.md) — task-tracker briefing вне кода.
+- [`team`](../team/SKILL.md) — foundation for all team ops.
+- [`restore`](../restore/SKILL.md) — recall before a complex pipeline.
+- [`briefing`](../briefing/SKILL.md) — task-tracker briefing outside the code.
 
 ## Anti-patterns
 
-- **Не запускай pipeline без approval** — пользователь должен видеть план.
-- **Не передавай raw output между шагами** — сжимай в summary.
-- **Не оркеструй тривиальную задачу** — если 1 скилл достаточно, вызывай его напрямую.
-- **Не пропускай RECALL** — research часто уже сделан.
-- **Не забывай про cleanup** — каждый step должен корректно завершиться (TeamDelete, memory_retain).
+- **Don't run a pipeline without approval** — the user must see the plan.
+- **Don't pass raw output between steps** — compress to summary.
+- **Don't orchestrate trivial tasks** — if one skill is enough, call it directly.
+- **Don't skip RECALL** — research is often already done.
+- **Don't forget cleanup** — every step must close cleanly (TeamDelete, memory_retain).

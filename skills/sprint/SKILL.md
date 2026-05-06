@@ -1,54 +1,71 @@
 ---
 name: sprint
-description: Волновое исполнение фичи/задачи многоагентной командой — research → план волн (5-8 агентов в 2-5 волнах) → approval → wave-by-wave спавн teammates через TeamCreate. Поддерживает два режима — full sprint (с research-фазой) и lightweight wave (использует контекст текущего чата). Каждая волна — независимая параллельная работа агентов с строгим file ownership; зависимые задачи — в следующей волне. Используется для имплементации больших фич, refactor sprint'ов, milestone'ов. Триггеры (EN/RU) — "sprint", "wave plan", "implement feature in waves", "запусти спринт", "распланируй волны", "реализуй фичу", "implement RFC-XXX", "/sprint", "/wave".
+description: Wave-based execution of a feature/task by a multi-agent team — research → wave plan (5-8 agents in 2-5 waves) → approval → wave-by-wave teammate spawn via TeamCreate. Two modes — full sprint (with research phase) and lightweight wave (uses current chat context). Each wave is independent parallel work by agents under strict file ownership; dependent tasks go in the next wave. Use for large feature implementation, refactor sprints, milestones. Triggers (EN/RU) — "sprint", "wave plan", "implement feature in waves", "запусти спринт", "распланируй волны", "реализуй фичу", "implement RFC-XXX", "/sprint", "/wave".
 ---
 
 # Wave-Based Sprint Execution
 
-Волновое исполнение задач — research, план, approval, wave-by-wave запуск teammates.
-Объединяет два режима: **full sprint** (research-first) и **lightweight wave** (использует
-контекст чата). Опирается на [`team`](../team/SKILL.md)
-и при необходимости — на [`research`](../research/SKILL.md).
+Wave-based task execution — research, plan, approval, wave-by-wave teammate spawn.
+Combines two modes: **full sprint** (research-first) and **lightweight wave** (uses
+chat context). Builds on [`team`](../team/SKILL.md) and, when needed,
+[`research`](../research/SKILL.md).
 
 ---
 
-## Когда использовать
+## Project context (read first)
 
-- Большая фича / RFC, требующая 5-8+ агентов и 2-5 волн.
-- Рефакторинг с явными слоями зависимостей.
-- Milestone из множества подзадач, которые можно частично распараллелить.
-- Пользователь сказал: «sprint», «wave», «реализуй», «implement RFC-XXX», «запусти волны».
+If `/setup` ran in the project, paths, commands, and terminology are pinned in:
 
-## Когда НЕ использовать
+- `@docs/agents/paths.md` — where RFCs, TODOs, sources live (for the file-ownership map)
+- `@docs/agents/build-config.md` — build/test commands for inter-wave checks
+- `@CONTEXT.md` — domain glossary (use when phrasing teammate tasks)
 
-- Точечный фикс (1 файл, 1 функция) — single agent.
-- Чистый research без планов имплементации — [`research`](../research/SKILL.md).
+Check with `test -d docs/agents`. If present, hand it to teammates in the prompt.
+If not, auto-detect: glob the project, parse `package.json` / `Cargo.toml` / `go.mod`
+for commands.
+
+Never assume pnpm/cargo/etc or specific paths — read `docs/agents/*.md` or detect
+in-session.
+
+---
+
+## When to use
+
+- Big feature / RFC needing 5-8+ agents and 2-5 waves.
+- Refactor with clear dependency layers.
+- Milestone of many sub-tasks that can be partially parallelized.
+- User said: "sprint", "wave", "реализуй", "implement RFC-XXX", "запусти волны".
+
+## When NOT to use
+
+- Pinpoint fix (1 file, 1 function) — single agent.
+- Pure research without an implementation plan — [`research`](../research/SKILL.md).
 - Code review — [`audit`](../audit/SKILL.md).
 
 ---
 
-## Два режима
+## Two modes
 
-| Режим | Когда | Step 1 | Step 2 |
+| Mode | When | Step 1 | Step 2 |
 |---|---|---|---|
-| **Full Sprint** | Свежая задача, контекст пуст или мал | Research через [`research`](../research/SKILL.md) (3 параллельных Explore агента) | Generate plan |
-| **Lightweight Wave** | Уже обсудили задачу, контекст наполнен | Extract context из чата (не запускать research) | Generate plan |
+| **Full Sprint** | Fresh task, empty or thin context | Research via [`research`](../research/SKILL.md) (3 parallel Explore agents) | Generate plan |
+| **Lightweight Wave** | Task already discussed, context is rich | Extract context from chat (skip research) | Generate plan |
 
-Все остальные шаги — общие.
+All other steps are shared.
 
 ---
 
-## Железные правила (НАРУШЕНИЕ = ПРОВАЛ)
+## Iron Rules (BREAK = SPRINT FAILS)
 
-> Эти правила пришли из [`team`](../team/SKILL.md).
-> Здесь — критический минимум, который **обязан** быть в каждом плане.
+> These rules come from [`team`](../team/SKILL.md).
+> This is the critical minimum every plan **must** include.
 
-1. **`TeamCreate` — единственный способ запуска.** `Task()` напрямую — запрещено.
-2. **Team-lead = только координация.** НЕ пишет код, НЕ редактирует файлы, НЕ запускает тесты. Только: spawn → monitor → verify → report → next wave.
-3. **Teammates = вся работа.** Каждый в своём процессе, со своим контекстом.
-4. **Доп. работа → НОВЫЙ teammate.** Никогда не нагружай существующего.
-5. **Перед `TeamCreate` — проверь существующие команды.** Спроси пользователя перед `TeamDelete`.
-6. **Один файл = один агент в волне.** Зависимые задачи — в следующей волне.
+1. **`TeamCreate` is the only spawn path.** Direct `Task()` is forbidden.
+2. **Team-lead = coordination only.** Does NOT write code, edit files, or run tests. Only: spawn → monitor → verify → report → next wave.
+3. **Teammates = all the work.** Each in its own process, its own context.
+4. **Extra work → NEW teammate.** Never load it onto an existing one.
+5. **Before `TeamCreate` — check existing teams.** Ask the user before `TeamDelete`.
+6. **One file = one agent per wave.** Dependent tasks go in the next wave.
 
 ---
 
@@ -56,7 +73,7 @@ description: Волновое исполнение фичи/задачи мно�
 
 ### Full Sprint (default)
 
-3 параллельных Explore агента:
+3 parallel Explore agents:
 
 ```
 Agent R1: Read RFC + TODO
@@ -70,40 +87,40 @@ Agent R2: Scan codebase
   → Note patterns from similar modules
 
 Agent R3: Memory + known issues
-  → memory_recall("{topic}") если доступно
+  → memory_recall("{topic}") if available
   → Read KNOWN-ISSUES.md
   → Recent git log for context
 ```
 
-(Можно делегировать [`research`](../research/SKILL.md) для глубокого варианта.)
+(Can delegate to [`research`](../research/SKILL.md) for the deep variant.)
 
 ### Lightweight Wave
 
-**НЕ запускай Explore агентов.** Извлеки из чата:
+**Don't spawn Explore agents.** Extract from chat:
 
-- Файлы, которые читали / обсуждали.
-- Tasks / TODO упомянутые.
-- Архитектурные решения принятые.
+- Files read or discussed.
+- Tasks / TODOs mentioned.
+- Architectural decisions taken.
 - RFC references.
 - User preferences / requirements.
 
-Плюс быстрые локальные проверки:
+Plus quick local checks:
 
 ```bash
 git branch --show-current
-# Glob/Grep ТОЛЬКО для подтверждения конкретного файла
-# Read 1-2 файла ТОЛЬКО если упомянуты и ещё не прочитаны
+# Glob/Grep ONLY to confirm a specific file
+# Read 1-2 files ONLY if mentioned and not yet read
 ```
 
-### Контекст-сводка (общая)
+### Context summary (shared)
 
 ```
 Branch: {git}
-Task: {что делаем}
-Done: {checkboxes из RFC/TODO}
-Remaining: {что осталось}
-Key files: {из чата или research}
-Constraints: {из CLAUDE.md, RFC, user preferences}
+Task: {what we're doing}
+Done: {checkboxes from RFC/TODO}
+Remaining: {what's left}
+Key files: {from chat or research}
+Constraints: {from CLAUDE.md, RFC, user preferences}
 ```
 
 ---
@@ -112,43 +129,43 @@ Constraints: {из CLAUDE.md, RFC, user preferences}
 
 ### Sizing rules
 
-| Контекст | Волны | Агентов всего |
+| Context | Waves | Agents total |
 |---|---|---|
 | Small (1-3 tasks) | 1-2 | 2-4 |
 | Medium (4-8 tasks) | 2-3 | 4-6 |
 | Large (9+ tasks) | 3-5 | 5-8 |
 
-**Жёсткие лимиты**:
+**Hard limits**:
 
-- Max **5 волн**.
-- Max **5 агентов в волне**.
-- Max **400 LOC на агента** (>400 — разбей на 2 агента).
-- Min **100 LOC на агента** (<100 — объедини с другим).
+- Max **5 waves**.
+- Max **5 agents per wave**.
+- Max **400 LOC per agent** (>400 — split into 2 agents).
+- Min **100 LOC per agent** (<100 — merge with another).
 
-### Agent Description Format
+### Agent description format
 
 ```
 **Agent {i}: `{kebab-name}`** (subagent_type: `{type}`)
-- Файлы: NEW/MODIFY
+- Files: NEW/MODIFY
   - `{path}` (~{LOC})
-- Задача: {one-line}
-  - Изучить: {2-4 файлов FIRST}
-  - Создать: {bullet points}
+- Task: {one-line}
+  - Study: {2-4 files FIRST}
+  - Create: {bullet points}
   - Requirements: {2-4 constraints}
 ```
 
 ### Subagent type selection
 
-| Тип задачи | subagent_type |
+| Task type | subagent_type |
 |---|---|
 | Generic implementation | `general-purpose` |
 | Frontend (React/Vue/etc) | `frontend-developer` / `nextjs-developer` |
 | Backend / API / services | `backend-architect` / `microservices-architect` |
 | TypeScript types | `typescript-pro` |
-| Tests | `general-purpose` или `tester` |
+| Tests | `general-purpose` or `tester` |
 | Docs | `documentation-engineer` |
 
-(Адаптируй под доступные subagent types в репо `agents/`.)
+(Adapt to subagent types available in the project's `agents/` dir.)
 
 ### Wave dependency patterns
 
@@ -156,27 +173,27 @@ Constraints: {из CLAUDE.md, RFC, user preferences}
 - **Backend → Frontend → Integration**
 - **Parallel Domains → Integration → Tests**
 
-Внутри волны — параллельно. Между волнами — sequential, dependency через файлы.
+Within a wave — parallel. Between waves — sequential, dependencies flow through files.
 
 ---
 
 ## Step 3: Present plan, wait for approval
 
-> **КРИТИЧНО**: вывод плана как **текст**. Никакого исполнения, пока user не сказал «запускаем».
+> **CRITICAL**: emit the plan as **text**. No execution until the user says "go".
 
 ```markdown
 # {Title} — Sprint/Wave Plan
 
-## Контекст
-- Ветка: `{branch}`
-- RFC: `{path}` (если есть)
-- TODO: `{path}` (с line range, если знаем)
+## Context
+- Branch: `{branch}`
+- RFC: `{path}` (if any)
+- TODO: `{path}` (with line range if known)
 
-## Что уже сделано
+## Already done
 ✅ {item 1} ({summary — LOC, tests, deliverables})
 ✅ {item 2} (...)
 
-## Оставшаяся работа
+## Remaining work
 
 ### {Category 1}: {name} (~{LOC})
 - {sub-task} (~{LOC})
@@ -184,22 +201,22 @@ Constraints: {из CLAUDE.md, RFC, user preferences}
 ### {Category 2}: {name}
 - [ ] {task} (~{LOC}) — `{file-path}`
 
-## Существующие ресурсы (изучить!)
+## Existing resources (study them!)
 
-| Файл | Что есть | Переиспользовать |
+| File | What's there | How to reuse |
 |---|---|---|
 | `{path}` | {desc} | {how} |
 
-## Волны
+## Waves
 
-### Wave 1 — {Name}: {summary} ({M} агентов параллельно)
+### Wave 1 — {Name}: {summary} ({M} agents in parallel)
 
 **Agent 1: `{name}`** (subagent_type: `{type}`)
-- Файлы: NEW
+- Files: NEW
   - `{path}` (~{LOC})
-- Задача: ...
-  - Изучить: ...
-  - Создать: ...
+- Task: ...
+  - Study: ...
+  - Create: ...
   - Requirements: ...
 
 **Agent 2: `{name}`** (...)
@@ -215,27 +232,27 @@ Constraints: {из CLAUDE.md, RFC, user preferences}
 | agent-2 | features/store.ts (NEW) | shared/types.ts |
 | agent-3 | features/page.tsx (NEW) | features/store.ts |
 
-(Если у двух агентов в одной волне один файл — стоп, перепланируй.)
+(If two agents in the same wave touch one file — stop and replan.)
 
-## Зависимости
+## Dependencies
 
-Wave 1: [agent-a] [agent-b] [agent-c] — параллельно
+Wave 1: [agent-a] [agent-b] [agent-c] — parallel
                 ↓
-Wave 2: [agent-d] [agent-e] — параллельно
-       ↑ depends on {что из wave 1}
+Wave 2: [agent-d] [agent-e] — parallel
+       ↑ depends on {what from wave 1}
 
-## Ключевые файлы
+## Key files
 
-| Файл | Зачем |
+| File | Why |
 |---|---|
 | `{path}` | reason |
 
-## Правила
+## Rules
 
-1. Каждый агент — ТОЛЬКО свои файлы.
+1. Each agent — ONLY its own files.
 2. Follow CLAUDE.md project rules.
 3. {sprint-specific rule from research / chat}
-4. 0 новых type-check ошибок.
+4. 0 new type-check errors.
 
 ## Effort Summary
 
@@ -245,21 +262,21 @@ Wave 2: [agent-d] [agent-e] — параллельно
 | 2 | 3 | ~810 | 18 | Features |
 ```
 
-После плана — **спроси**:
+After the plan — **ask**:
 
 ```
 ---
 
-**Plan готов. {N} волн, {M} агентов, ~{LOC} LOC, ~{tests} тестов.**
+**Plan ready. {N} waves, {M} agents, ~{LOC} LOC, ~{tests} tests.**
 
-Варианты:
-1. ✅ Запускаем — TeamCreate → Wave 1
-2. ✏️ Корректировка — скажи что поменять
-3. 📋 Сохранить план в файл
-4. ❌ Отмена
+Options:
+1. ✅ Run it — TeamCreate → Wave 1
+2. ✏️ Adjust — tell me what to change
+3. 📋 Save plan to file
+4. ❌ Cancel
 ```
 
-**НЕ продолжай** до явного «запускаем» / «да» / «go» / «1».
+**Don't proceed** until an explicit "go" / "yes" / "1".
 
 ---
 
@@ -268,16 +285,16 @@ Wave 2: [agent-d] [agent-e] — параллельно
 ### 4a. Setup
 
 ```
-1. ПРОВЕРИТЬ существующие команды:
-   - Если есть "sprint-*" / "wave-*" — проверь состояние:
-     · все teammates завершили? → ЗАКОНЧЕНА
-     · не отвечают / зависли? → ЗАВИСЛА
-     · ещё работают? → АКТИВНА (подожди или спроси)
-   - СПРОСИ пользователя: "Команда '{name}' — {статус}. Удалить через TeamDelete?"
-   - Подтвердил → TeamDelete | Отказал → спроси что делать
-2. TeamCreate(team_name="sprint-{topic}" или "wave-{topic}")
-3. team-lead = ТОЛЬКО координация
-4. teammates = вся работа
+1. CHECK existing teams:
+   - If a "sprint-*" / "wave-*" team exists — check state:
+     · all teammates finished? → DONE
+     · unresponsive / stuck? → HUNG
+     · still working? → ACTIVE (wait or ask)
+   - ASK user: "Team '{name}' — {status}. TeamDelete it?"
+   - Confirmed → TeamDelete | Refused → ask what to do
+2. TeamCreate(team_name="sprint-{topic}" or "wave-{topic}")
+3. team-lead = coordination ONLY
+4. teammates = all the work
 ```
 
 ### 4b. Team-lead prompt
@@ -333,18 +350,18 @@ After ALL waves:
 
 ### 4c. Dynamic teammates
 
-Если в процессе волны обнаружилась доп. работа (баг, недостающий файл, нужен компонент):
+If extra work surfaces mid-wave (bug, missing file, needed component):
 
 ```
-- Team-lead создаёт НОВОГО teammate для этой задачи
-- Новый teammate работает в СВОЁМ процессе, СВОЙ контекст
-- НЕ нагружай существующих
-- Team-lead ждёт ALL teammates (оригинальные + новые) перед закрытием wave
+- Team-lead spawns a NEW teammate for that task
+- New teammate runs in ITS OWN process, ITS OWN context
+- Don't pile on existing teammates
+- Team-lead waits for ALL teammates (original + new) before closing the wave
 ```
 
 ### 4d. Wave handoff
 
-Между волнами — task overlay для пользователя:
+Between waves — task overlay for the user:
 
 ```markdown
 ---
@@ -365,22 +382,22 @@ After ALL waves:
 
 ---
 
-Продолжаем Wave {N}? Или:
-- `/compact` — сжать контекст
-- `plan mode` — войти в plan mode
-- «очистить контекст» — сохрани прогресс и дай continuation prompt
+Continue to Wave {N}? Or:
+- `/compact` — compact context
+- `plan mode` — enter plan mode
+- "clear context" — save progress and emit a continuation prompt
 ```
 
 ### 4e. Token budget awareness
 
-Перед каждой новой волной:
+Before each new wave:
 
 ```
 IF tokens remaining < 30%:
   WARN user:
-    "⚠️ Контекст ~{X}% заполнен. Перед Wave {N}:
-     A. /compact — сжать (быстро, теряет детали)
-     B. Новый чат с continuation prompt:
+    "⚠️ Context ~{X}% full. Before Wave {N}:
+     A. /compact — compact (fast, loses detail)
+     B. New chat with continuation prompt:
 
      ## Continuation: {title} — Wave {N}
      Branch: {branch}
@@ -390,7 +407,7 @@ IF tokens remaining < 30%:
      ### Wave {N} Prompt: {full description}
      ### Files Modified So Far: {list}
 
-     C. Продолжить как есть (рискованно)"
+     C. Continue as is (risky)"
 
 IF tokens remaining < 15%:
   → FORCE save continuation prompt, suggest new chat.
@@ -400,7 +417,7 @@ IF tokens remaining < 15%:
 
 ## Step 5: Wave completion overlay
 
-После каждой волны:
+After each wave:
 
 ```markdown
 ## 📋 Sprint Task Overlay: {title}
@@ -426,52 +443,52 @@ IF tokens remaining < 15%:
 {brief description}
 ```
 
-Затем варианты:
+Then options:
 
 ```
-1. ▶️ Wave {N} — следующая волна
-2. 🔍 Ревью — покажи файлы предыдущей волны
-3. 📊 Токены — проверить сколько осталось
-4. 💾 Сохранить прогресс — continuation prompt
-5. ⏸️ Пауза
+1. ▶️ Wave {N} — next wave
+2. 🔍 Review — show files from previous wave
+3. 📊 Tokens — check what's left
+4. 💾 Save progress — continuation prompt
+5. ⏸️ Pause
 ```
 
 ---
 
 ## Step 6: Final — Insights Extraction (MANDATORY)
 
-После завершения ВСЕХ волн команда **обязана** извлечь и задокументировать инсайты.
-**Без этого спринт не считается завершённым.**
+After ALL waves complete, the team **must** extract and document insights.
+**Without this, the sprint is not finished.**
 
-### Что собрать
+### What to collect
 
-- **Архитектурные решения (ADR)** — что и почему выбрали.
-- **Узкие места** — context overflow, cascading errors, stale build.
-- **Tech debt** — что не успели, заглушки, что доделать.
-- **Паттерны для переиспользования** — что родилось хорошее, копируется.
+- **Architectural decisions (ADR)** — what was chosen and why.
+- **Bottlenecks** — context overflow, cascading errors, stale build.
+- **Tech debt** — what didn't get done, stubs, follow-ups.
+- **Reusable patterns** — what good thing emerged that's worth copying.
 
-### Куда записать
+### Where to record
 
-1. **RFC / design doc** (если есть) — секция `Implementation Log` → `Sprint Insights & Bottlenecks`. См. [`rfc`](../rfc/SKILL.md).
-2. **TODO files** — секция `Sprint Insights & Technical Debt`:
+1. **RFC / design doc** (if exists) — section `Implementation Log` → `Sprint Insights & Bottlenecks`. See [`rfc`](../rfc/SKILL.md).
+2. **TODO files** — section `Sprint Insights & Technical Debt`:
 
    ```markdown
-   | # | Задача | RFC/Ref | Приоритет | Почему важно |
-   | - | ------ | ------- | --------- | ------------ |
-   | 1 | ...    | ...     | P1/P2     | ...          |
+   | # | Task | RFC/Ref | Priority | Why it matters |
+   | - | ---- | ------- | -------- | -------------- |
+   | 1 | ...  | ...     | P1/P2    | ...            |
    ```
 
-3. **KNOWN-ISSUES.md** (если найдены баги):
+3. **KNOWN-ISSUES.md** (if bugs were found):
 
    ```markdown
    ### N. {Short Description}
-   **Файл:** `path/to/file:line`
-   **Описание:** ...
-   **Статус:** Open
-   **Обнаружено:** YYYY-MM-DD ({Sprint context})
+   **File:** `path/to/file:line`
+   **Description:** ...
+   **Status:** Open
+   **Found:** YYYY-MM-DD ({Sprint context})
    ```
 
-4. **Memory** (если доступна): `memory_retain` ADR + tech debt + patterns + insights.
+4. **Memory** (if available): `memory_retain` ADR + tech debt + patterns + insights.
 
 ### Final output
 
@@ -481,26 +498,26 @@ IF tokens remaining < 15%:
 **Waves**: {N}/{N} | **Agents**: {total} | **LOC**: ~{total} | **Tests**: {count}
 
 ### Deliverables
-{что построили}
+{what we built}
 
 ### Files Created/Modified
 {cumulative list}
 
 ### Insights & Tech Debt
-{extracted, см. выше}
+{extracted, see above}
 
 ### Possible Next Steps
 - [ ] Run full test suite
 - [ ] Type-check
 - [ ] Commit
-- [ ] Audit (см. [`audit`](../audit/SKILL.md))
+- [ ] Audit (see [`audit`](../audit/SKILL.md))
 ```
 
 ---
 
 ## Wave Patterns Quick Reference
 
-| Тип | Pattern | Волны | Агентов |
+| Type | Pattern | Waves | Agents |
 |---|---|---|---|
 | Full-stack feature | Stores/Types → Backend → Frontend → Tests | 4 | 8 |
 | UI-only | Stores/Hooks → Components → Pages → Tests | 3-4 | 6-8 |
@@ -510,45 +527,45 @@ IF tokens remaining < 15%:
 
 ---
 
-## Anti-Patterns (нарушение = провал спринта)
+## Anti-Patterns (break = sprint fails)
 
-| Anti-Pattern | Почему | Делай иначе |
+| Anti-Pattern | Why | Do this instead |
 |---|---|---|
-| ⛔ `Task()` вместо `TeamCreate` | Нет координации, нет handoff | ВСЕГДА `TeamCreate` |
-| ⛔ Team-lead пишет код | Смешение ролей, потеря контроля | Team-lead = ТОЛЬКО координация |
-| ⛔ Доп. работа существующему teammate | Перегрузка, потеря фокуса | НОВЫЙ teammate на каждую доп. задачу |
-| ⛔ Два агента правят один файл | Конфликты, потеря кода | Strict file ownership |
-| Execute без user approval | Wrong plan, wasted tokens | ВСЕГДА показывай план, жди «запускаем» |
-| >5 агентов в волне | Token explosion | Раздели на больше волн |
-| >400 LOC на агента | Качество падает | Раздели на 2 |
-| Не проверять stale teams | TeamCreate fails | Сначала TeamDelete старых |
-| Нет task overlay между волнами | Lost context | ВСЕГДА overlay |
-| Игнор token budget | Overflow посреди sprint | Проверяй перед каждой волной |
-| Дублирование CLAUDE.md правил | Wasted tokens | "Follow CLAUDE.md" + 3-4 specific |
-| Skip insights extraction | Знания теряются | INSIGHTS — обязательны |
+| ⛔ `Task()` instead of `TeamCreate` | No coordination, no handoff | ALWAYS `TeamCreate` |
+| ⛔ Team-lead writes code | Roles blur, control lost | Team-lead = coordination ONLY |
+| ⛔ Extra work onto existing teammate | Overload, focus loss | NEW teammate per extra task |
+| ⛔ Two agents on one file | Conflicts, lost code | Strict file ownership |
+| Execute without user approval | Wrong plan, wasted tokens | ALWAYS show plan, wait for "go" |
+| >5 agents per wave | Token explosion | Split across more waves |
+| >400 LOC per agent | Quality drops | Split into 2 |
+| Ignoring stale teams | TeamCreate fails | TeamDelete the old ones first |
+| No task overlay between waves | Lost context | ALWAYS overlay |
+| Ignoring token budget | Mid-sprint overflow | Check before every wave |
+| Duplicating CLAUDE.md rules | Wasted tokens | "Follow CLAUDE.md" + 3-4 specifics |
+| Skip insights extraction | Knowledge is lost | INSIGHTS — mandatory |
 
 ---
 
-## Связанные скиллы
+## Related skills
 
-- [`team`](../team/SKILL.md) — фундамент (Mode A/B, file ownership, recipes).
-- [`research`](../research/SKILL.md) — research-фаза full sprint'а.
-- [`audit`](../audit/SKILL.md) — после спринта — audit.
-- [`rfc`](../rfc/SKILL.md) — Implementation Log + Insights пишутся в RFC.
-- [`do`](../do/SKILL.md) — чейнит всё вместе.
-- [`build`](../build/SKILL.md) — если уже есть готовый research report с IMPLEMENTATION-PLAN.md.
-- [`restore`](../restore/SKILL.md) — на старте сессии перед спринтом.
+- [`team`](../team/SKILL.md) — foundation (Mode A/B, file ownership, recipes).
+- [`research`](../research/SKILL.md) — research phase of full sprint.
+- [`audit`](../audit/SKILL.md) — post-sprint audit.
+- [`rfc`](../rfc/SKILL.md) — Implementation Log + Insights land in the RFC.
+- [`do`](../do/SKILL.md) — chains everything together.
+- [`build`](../build/SKILL.md) — when a research report with IMPLEMENTATION-PLAN.md already exists.
+- [`restore`](../restore/SKILL.md) — at session start, before a sprint.
 
 ## Decision Guide: full sprint vs lightweight wave
 
 ```
-У тебя уже есть контекст в чате?
-  ├── ДА → lightweight wave (skip research, generate plan)
-  │    ├── Обсуждали задачу → wave
-  │    ├── Читали RFC/TODO → wave
-  │    └── Делали research → wave
+Do you already have context in chat?
+  ├── YES → lightweight wave (skip research, generate plan)
+  │    ├── Discussed the task → wave
+  │    ├── Read RFC/TODO → wave
+  │    └── Did research → wave
   │
-  └── НЕТ → full sprint (research + plan)
-       ├── Новая задача → full sprint
-       └── Старт сессии после паузы → restore, потом full sprint
+  └── NO → full sprint (research + plan)
+       ├── New task → full sprint
+       └── Session start after a break → restore, then full sprint
 ```

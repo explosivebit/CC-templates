@@ -25,7 +25,7 @@
 - [research](skills/research/SKILL.md) — глубокий research 5 параллельными агентами (code, docs, status, reference, knowledge). `/research`.
 - [restore](skills/restore/SKILL.md) — восстанавливает контекст сессии: git + рабочая копия + (опц.) persistent memory. `/restore`.
 - [rfc](skills/rfc/SKILL.md) — создание/чтение/обновление RFC и ADR: meta header, phase progress, implementation log, ADR. `/rfc`.
-- [setup](skills/setup/SKILL.md) — интерактивный wizard для конфигурации проекта: issue tracker / build-команды / paths / domain glossary → пишет в `docs/agents/*.md` (+ создаёт `CONTEXT.md`, `LANGUAGE.md`). Backbone дегерцификации. `/setup`.
+- [setup](skills/setup/SKILL.md) — интерактивный wizard для конфигурации проекта: issue tracker / build-команды / paths / domain glossary → пишет в `docs/agents/*.md` (+ создаёт `CONTEXT.md`). Backbone дегерцификации. `/setup`.
 - [sprint](skills/sprint/SKILL.md) — волновое исполнение фичи (full sprint с research / lightweight wave из контекста чата) с TeamCreate, file ownership, insights extraction. `/sprint`.
 - [team](skills/team/SKILL.md) — фундамент многоагентных команд: TeamCreate vs sub-agents, file ownership, recipes, cleanup. База для других мульти-агентных скиллов. `/team`.
 

@@ -1,65 +1,71 @@
 ---
 name: team
-description: Фундаментальный скилл для запуска многоагентных команд — TeamCreate vs параллельные Task() (sub-agents), роли team-lead vs teammates, file ownership, динамический спавн новых агентов на дополнительные задачи, cleanup. Используется как база для других мульти-агентных скиллов (research, audit, sprint, wave) или напрямую, когда пользователь просит распараллелить задачу. Триггеры (EN/RU) — "create agent team", "run agents in parallel", "team up", "split work across agents", "распараллель", "запусти команду агентов", "team up", "/team-up".
+description: Foundational skill for launching multi-agent teams — TeamCreate vs parallel Task() (sub-agents), team-lead vs teammate roles, file ownership, dynamically spawning new agents for additional work, cleanup. Used as the base layer by other multi-agent skills (research, audit, sprint, wave) or directly when the user asks to parallelize a task. Triggers (EN/RU) — "create agent team", "run agents in parallel", "team up", "split work across agents", "распараллель", "запусти команду агентов", "team up", "/team-up".
 ---
 
 # Agent Team Orchestration
 
-База для запуска многоагентных команд в Claude Code. Описывает железные правила
-координации, выбор режима (Agent Teams vs sub-agents), file ownership, recipes для
-типовых задач. Другие мульти-агентные скиллы ([`research`](../research/SKILL.md),
-[`audit`](../audit/SKILL.md), [`sprint`](../sprint/SKILL.md))
-ссылаются на этот скилл — здесь живут общие правила.
+The base layer for running multi-agent teams in Claude Code. Defines the iron
+rules for coordination, mode selection (Agent Teams vs sub-agents), file
+ownership, and recipes for typical tasks. Other multi-agent skills
+([`research`](../research/SKILL.md), [`audit`](../audit/SKILL.md),
+[`sprint`](../sprint/SKILL.md)) reference this skill — the shared rules live here.
 
 ---
 
-## Когда использовать
+## When to Use
 
-- Задача нативно параллельна (research нескольких источников, обзор нескольких пакетов).
-- Контекст одной задачи слишком велик для одного агента — нужно разделить по доменам.
-- Пользователь просит «распараллель», «запусти команду», «team up».
-- Используется как зависимость другими скиллами (audit, research, sprint).
+- The task is naturally parallel (research across multiple sources, review of
+  multiple packages).
+- A single task's context is too big for one agent — split it by domain.
+- The user says "распараллель", "запусти команду", "team up".
+- Used as a dependency by other skills (audit, research, sprint).
 
-## Когда НЕ использовать
+## When Not to Use
 
-- Задача линейна и помещается в один контекст — однопоточная работа быстрее.
-- Изменение в одном файле / одна функция — координация дороже самой работы.
-- Нет независимых блоков работы — все шаги зависят от предыдущего.
+- The task is linear and fits in one context — single-thread is faster.
+- A change in one file / one function — coordination costs more than the work.
+- No independent blocks of work — every step depends on the previous one.
 
 ---
 
-## Железные правила (нарушение = провал)
+## Iron Rules (breaking any = failure)
 
-1. **`TeamCreate` — единственный способ запуска**, когда он доступен. Прямой `Task()` — только в fallback-режиме (Mode B).
-2. **Team-lead = ТОЛЬКО координация.** Не пишет код, не редактирует файлы, не запускает тесты. Его работа — spawn → monitor → verify → report → next wave.
-3. **Teammates = вся работа.** Каждый в своём процессе, со своим контекстом.
-4. **Дополнительная работа → НОВЫЙ teammate.** Никогда не нагружай существующего — потеря фокуса и контекста.
-5. **Перед `TeamCreate` — проверь старые команды.** Спроси пользователя перед `TeamDelete`.
-6. **Один файл = один агент в волне.** Иначе — конфликты и потеря кода.
+1. **`TeamCreate` is the only spawn path** when available. A direct `Task()` is
+   for fallback only (Mode B).
+2. **Team-lead = coordination ONLY.** Doesn't write code, doesn't edit files,
+   doesn't run tests. Its job is spawn → monitor → verify → report → next wave.
+3. **Teammates do all the work.** Each in its own process, with its own context.
+4. **Additional work → a NEW teammate.** Never load it onto an existing one —
+   focus and context are lost.
+5. **Before `TeamCreate` — check existing teams.** Ask the user before
+   `TeamDelete`.
+6. **One file = one agent per wave.** Otherwise — conflicts and lost code.
 
 ---
 
 ## Mode Selection (mandatory first step)
 
-Перед спавном проверь, какой режим доступен:
+Before spawning, check which mode is available:
 
 ### Mode A: Agent Teams (preferred)
 
-**Сигнал**: `TeamCreate` / `TeamDelete` / `SendMessage` доступны (можно проверить через `ToolSearch({query: "select:TeamCreate"})`).
+**Signal**: `TeamCreate` / `TeamDelete` / `SendMessage` are available (verify via
+`ToolSearch({query: "select:TeamCreate"})`).
 
 ```
 1. TeamCreate(team_name="research-{topic}")
 2. Agent(prompt="...", team_name="research-{topic}", name="team-lead")
-3. team-lead спавнит teammates: Agent(team_name=..., name=...)
-4. Координация через SendMessage(to="...", content="...")
-5. После работы: shutdown teammates → TeamDelete()
+3. team-lead spawns teammates: Agent(team_name=..., name=...)
+4. Coordination via SendMessage(to="...", content="...")
+5. After work: shutdown teammates → TeamDelete()
 ```
 
-Преимущества: shared context, addressable агенты, team-lead oversight.
+Advantages: shared context, addressable agents, team-lead oversight.
 
 ### Mode B: Sub-Agents fallback
 
-**Сигнал**: `TeamCreate` не найден или вернул ошибку.
+**Signal**: `TeamCreate` not found or returned an error.
 
 ```
 Agent(prompt="...", name="agent-a", run_in_background=true)
@@ -67,59 +73,64 @@ Agent(prompt="...", name="agent-b", run_in_background=true)
 # Wait for completion notifications, synthesize in main context.
 ```
 
-Без team-lead, без shared context — каждый агент получает полный контекст в своём prompt.
+No team-lead, no shared context — each agent gets the full context in its own prompt.
 
-**Правило**: если `TeamCreate` доступен — Mode B запрещён.
+**Rule**: if `TeamCreate` is available, Mode B is forbidden.
 
 ---
 
-## Workflow (5 шагов)
+## Workflow (5 Steps)
 
 ### Step 1: RECALL & STUDY
 
-Перед созданием команды собери контекст:
+Gather context before creating the team:
 
-#### 1a. Память (если есть)
+#### 1a. Memory (if available)
 
-Hindsight MCP (`memory_recall`), notes/, decisions/, ADR-*.md, или файлы, на которые указывает CLAUDE.md.
+Hindsight MCP (`memory_recall`), notes/, decisions/, ADR-*.md, or files
+referenced by CLAUDE.md.
 
 #### 1b. TODO / Task tracker
 
-Найди файлы трекинга: `TODO.md`, `**/docs/TODO.md`, `KNOWN-ISSUES.md`. Большие TODO (>1000 строк) — читай через `offset`+`limit` или делегируй sub-task'у с `subagent_type: "Explore"`.
+Find tracking files: `TODO.md`, `**/docs/TODO.md`, `KNOWN-ISSUES.md`. Large
+TODOs (>1000 lines) — read with `offset`+`limit` or delegate to a sub-task with
+`subagent_type: "Explore"`.
 
 #### 1c. Source Code — ULTIMATE TRUTH
 
-Если TODO/память противоречат коду — **верь коду**. TODO устаревает, память может быть stale.
+If TODO/memory contradicts code — **trust the code**. TODO goes stale, memory
+can be stale.
 
-Триангуляция:
+Triangulation:
 
 ```
 1. TODO claims [x] feature X done
 2. memory_recall("X") confirms
 3. grep "X" src/ — VERIFY it actually exists
-   → нет кода = TODO ошибается, fix the TODO
+   → no code = TODO is wrong, fix the TODO
 ```
 
-### Step 2: CLASSIFY — выбери recipe
+### Step 2: CLASSIFY — pick a recipe
 
-| Recipe | Когда | Teammates | Стоимость |
+| Recipe | When | Teammates | Cost |
 | --- | --- | --- | --- |
 | **Review Squad** | PR review, code audit | 3 (security + perf + tests) | Medium |
-| **Feature Build** | Новая фича по слоям | 2–4 (backend + frontend + tests) | High |
-| **Bug Hunt** | Конкурирующие гипотезы | 3–5 (каждый тестит теорию) | Medium |
-| **Research** | Анализ архитектуры | 2–3 (каждый — свой угол) | Low |
-| **Full-Stack Sprint** | E2E фича (DB → API → UI) | 3 (schema + API + frontend) | High |
-| **Refactor Wave** | Большой рефакторинг | 2–4 (каждый — свой пакет) | High |
+| **Feature Build** | New feature by layer | 2–4 (backend + frontend + tests) | High |
+| **Bug Hunt** | Competing hypotheses | 3–5 (each tests a theory) | Medium |
+| **Research** | Architecture analysis | 2–3 (each — its own angle) | Low |
+| **Full-Stack Sprint** | E2E feature (DB → API → UI) | 3 (schema + API + frontend) | High |
+| **Refactor Wave** | Large refactor | 2–4 (each — its own package) | High |
 
-### Step 3: RESEARCH — собери контекст для teammates
+### Step 3: RESEARCH — collect context for teammates
 
-Источники в порядке приоритета:
+Sources in priority order:
 
-1. **TODO files** — что сделано, что осталось, какие gaps.
-2. **RFC/design docs** — конвенции, требования. См. [`rfc`](../rfc/SKILL.md).
-3. **Reference implementations** — `sources/`, `vendor/`, `node_modules/` ключевых либ.
-4. **Internal packages** — `packages/*/README.md`, `src/index.ts`. Не реимплементируй то, что уже есть.
-5. **Library docs** — Context7 MCP вместо web-браузинга.
+1. **TODO files** — what's done, what's left, what gaps exist.
+2. **RFC/design docs** — conventions, requirements. See [`rfc`](../rfc/SKILL.md).
+3. **Reference implementations** — `sources/`, `vendor/`, `node_modules/` of key libs.
+4. **Internal packages** — `packages/*/README.md`, `src/index.ts`. Don't reimplement
+   what already exists.
+5. **Library docs** — Context7 MCP instead of web browsing.
 6. **Memory** — past decisions, known bugs.
 
 ### Step 4: SPAWN
@@ -130,15 +141,15 @@ Hindsight MCP (`memory_recall`), notes/, decisions/, ADR-*.md, или файлы
 // 1. Create team
 TeamCreate({ team_name: "feature-auth" });
 
-// 2. Spawn team-lead (КООРДИНАТОР, НЕ кодер)
+// 2. Spawn team-lead (COORDINATOR, NOT a coder)
 Agent({
   prompt: TEAM_LEAD_PROMPT,
   team_name: "feature-auth",
   name: "team-lead",
-  mode: "plan", // требует plan approval
+  mode: "plan", // requires plan approval
 });
 
-// 3. team-lead спавнит teammates изнутри своего контекста:
+// 3. team-lead spawns teammates from within its own context:
 Agent({
   prompt: BACKEND_DEV_PROMPT,
   team_name: "feature-auth",
@@ -146,10 +157,10 @@ Agent({
   mode: "bypassPermissions",
 });
 
-// 4. Координация через сообщения:
+// 4. Coordinate via messages:
 SendMessage({ to: "backend-dev", content: "Status?" });
 
-// 5. После работы:
+// 5. After work:
 // shutdown each teammate, then:
 TeamDelete();
 ```
@@ -166,7 +177,7 @@ Agent({ prompt: PROMPT_B, name: "agent-b", run_in_background: true });
 
 ## Teammate Prompt Template
 
-Каждый teammate получает один и тот же шаблон с конкретикой:
+Every teammate gets the same template, filled in with specifics:
 
 ```
 You are {role} on team "{team-name}".
@@ -197,7 +208,7 @@ READ-ONLY (study, don't edit):
 
 === YOUR TASKS ===
 
-{task list — 5-6 concrete items, не одна гигантская задача}
+{task list — 5-6 concrete items, not one giant task}
 
 === PROJECT RULES ===
 
@@ -222,29 +233,35 @@ Save key learnings to memory if memory system is configured.
 
 ## Step 5: SYNTHESIZE → RETAIN → CLEANUP
 
-После того как все teammates завершили:
+Once all teammates have finished:
 
-1. **Synthesize** — собери reports, кросс-валидируй (consensus = high confidence; unique = verify).
-2. **Retain** — сохрани в memory ключевые решения, паттерны.
-3. **Update docs** — TODO files (add `[x]` + `Files Modified`), KNOWN-ISSUES.md, relevant RFC.
+1. **Synthesize** — collect reports, cross-validate (consensus = high confidence;
+   unique = verify).
+2. **Retain** — save key decisions and patterns to memory.
+3. **Update docs** — TODO files (add `[x]` + `Files Modified`), KNOWN-ISSUES.md,
+   the relevant RFC.
 4. **Cleanup** —
-   - Mode A: shutdown each teammate (`SendMessage(type="shutdown_request")`), затем `TeamDelete()`.
-   - Mode B: дождись завершения, никаких дополнительных шагов.
+   - Mode A: shutdown each teammate (`SendMessage(type="shutdown_request")`),
+     then `TeamDelete()`.
+   - Mode B: wait for completion, no extra steps.
 
 ---
 
-## File Ownership (железное правило)
+## File Ownership (iron rule)
 
-> **Один файл = один агент в волне.** Иначе — race condition в репо.
+> **One file = one agent per wave.** Otherwise — race condition in the repo.
 
-### Правила
+### Rules
 
-1. **Один файл = один агент** — два агента НИКОГДА не редактируют один файл параллельно.
-2. **Зависимости через волны** — если B зависит от файла A, B идёт в **следующую** волну.
-3. **Shared types** (index.ts, types.ts) — один агент создаёт, остальные только читают; barrel exports добавляет последний агент в волне.
-4. **При конфликте** — остановиться и спросить пользователя: merge вручную, откатить одного, или переделать. **Никогда** не откатывать молча.
+1. **One file = one agent** — two agents NEVER edit the same file in parallel.
+2. **Dependencies via waves** — if B depends on A's file, B goes in the **next**
+   wave.
+3. **Shared types** (index.ts, types.ts) — one agent creates, others only read;
+   barrel exports get added by the last agent in the wave.
+4. **On conflict** — stop and ask the user: merge manually, revert one side, or
+   redo. **Never** revert silently.
 
-### Таблица ownership (обязательна в плане)
+### Ownership Table (mandatory in the plan)
 
 ```
 | Agent      | Files (NEW/MODIFY)              | Read-only deps |
@@ -254,74 +271,81 @@ Save key learnings to memory if memory system is configured.
 | agent-3    | features/users/page.tsx (NEW)   | features/users/store.ts |
 ```
 
-Если у двух агентов в одной волне один файл в колонке `Files` — стоп, перепланируй.
+If two agents in the same wave share a file in the `Files` column — stop, replan.
 
 ---
 
-## Recipes (детали)
+## Recipes (details)
 
 ### Recipe 1: Review Squad (3 agents)
 
-Используется в [`audit`](../audit/SKILL.md) — там детально.
+Used by [`audit`](../audit/SKILL.md) — see there for details.
 
-Минимум: security-reviewer + perf-reviewer + test-reviewer. Каждый изучает свой угол, потом перекрёстно валидирует.
+Minimum: security-reviewer + perf-reviewer + test-reviewer. Each studies its own
+angle, then cross-validates.
 
 ### Recipe 2: Feature Build (3 agents)
 
-backend-dev + frontend-dev + test-writer. Backend и tests могут идти параллельно (если контракт фиксирован), frontend — после backend types.
+backend-dev + frontend-dev + test-writer. Backend and tests can run in parallel
+(if the contract is fixed); frontend goes after backend types.
 
 ### Recipe 3: Bug Hunt (4 agents)
 
-Каждый агент **тестирует свою гипотезу** и активно пытается **опровергнуть** другие. Гипотезы — auth / data / config / timing (race condition). Сходимость = подтверждение root cause.
+Each agent **tests its hypothesis** and actively tries to **falsify** the
+others. Hypotheses — auth / data / config / timing (race condition).
+Convergence = root cause confirmed.
 
 ### Recipe 4: Research (3 agents)
 
-Codebase-analyst + reference-analyst + architect (synthesizer). Подробнее — в [`research`](../research/SKILL.md).
+Codebase-analyst + reference-analyst + architect (synthesizer). Details in
+[`research`](../research/SKILL.md).
 
 ### Recipe 5: Refactor Wave
 
-По одному агенту на пакет/модуль. Плюс integration-tester, который запускает type-check + tests после каждого милстоуна.
+One agent per package/module. Plus an integration-tester that runs typecheck +
+tests after each milestone.
 
 ---
 
-## Anti-Patterns (избегать!)
+## Anti-Patterns (avoid!)
 
-| Anti-Pattern | Почему плохо | Делай иначе |
+| Anti-Pattern | Why it's bad | Do this instead |
 |---|---|---|
-| Два teammates правят один файл | Конфликты, потеря кода | Strict file ownership, разные волны |
-| `Task()` напрямую в Mode A | Нет координации, нет shared context | `TeamCreate` всегда, когда доступно |
-| Team-lead пишет код | Смешение ролей | Team-lead = только координация |
-| Доп. работа существующему teammate | Перегрузка контекста | Новый teammate на каждую новую задачу |
-| Skip memory_recall (если есть memory) | Re-doing past decisions | Recall первым шагом |
-| Чтение TODO целиком (>1000 строк) | Context overflow | offset/limit или sub-task |
-| Web-браузинг для library docs | Медленно, шумно | Context7 MCP |
+| Two teammates editing one file | Conflicts, lost code | Strict file ownership, separate waves |
+| `Task()` directly in Mode A | No coordination, no shared context | `TeamCreate` whenever available |
+| Team-lead writing code | Role mixing | Team-lead = coordination only |
+| Extra work to existing teammate | Context overload | New teammate per new task |
+| Skip memory_recall (when memory exists) | Re-doing past decisions | Recall as the first step |
+| Read full TODO (>1000 lines) | Context overflow | offset/limit or sub-task |
+| Web browsing for library docs | Slow, noisy | Context7 MCP |
 | >5 teammates | Token explosion | 2-4 — sweet spot |
-| Не сохранять learnings | Потеря знаний | memory_retain после |
-| Один гигантский task на teammate | Нет чекпойнтов | 5-6 мелких задач |
-| Не сверять TODO с кодом | TODO может врать | Triangulate (TODO + memory + grep) |
+| Skip saving learnings | Knowledge loss | memory_retain afterwards |
+| One giant task per teammate | No checkpoints | 5-6 small tasks |
+| Not cross-checking TODO vs code | TODO can lie | Triangulate (TODO + memory + grep) |
 
 ---
 
-## Cleanup checklist
+## Cleanup Checklist
 
-После завершения работы команды:
+Once the team finishes:
 
-- [ ] Каждый teammate сохранил свои learnings (memory, если настроена).
-- [ ] Все teammates помечены completed.
-- [ ] Shutdown requests отправлены всем.
-- [ ] Все shutdowns подтверждены.
-- [ ] `TeamDelete()` вызван (Mode A).
-- [ ] TODO файлы обновлены (`[x]` + `Files Modified`).
-- [ ] KNOWN-ISSUES.md обновлён, если найдены баги.
-- [ ] Relevant RFC обновлён (Implementation Log + Phase Progress) — см. [`rfc`](../rfc/SKILL.md).
-- [ ] Изменения готовы к ревью (diff осмотрен).
+- [ ] Each teammate saved its learnings (memory, if configured).
+- [ ] All teammates marked completed.
+- [ ] Shutdown requests sent to all.
+- [ ] All shutdowns confirmed.
+- [ ] `TeamDelete()` called (Mode A).
+- [ ] TODO files updated (`[x]` + `Files Modified`).
+- [ ] KNOWN-ISSUES.md updated if bugs were found.
+- [ ] Relevant RFC updated (Implementation Log + Phase Progress) — see
+      [`rfc`](../rfc/SKILL.md).
+- [ ] Changes ready for review (diff inspected).
 
 ---
 
-## Связанные скиллы
+## Related Skills
 
-- [`research`](../research/SKILL.md) — research recipe (5 агентов).
-- [`audit`](../audit/SKILL.md) — review squad (4-6 экспертов).
-- [`sprint`](../sprint/SKILL.md) — wave-based execution на этом фундаменте.
-- [`do`](../do/SKILL.md) — мета-оркестратор, выбирает между этими скиллами.
-- [`rfc`](../rfc/SKILL.md) — обновление RFC после команды.
+- [`research`](../research/SKILL.md) — research recipe (5 agents).
+- [`audit`](../audit/SKILL.md) — review squad (4-6 experts).
+- [`sprint`](../sprint/SKILL.md) — wave-based execution on this foundation.
+- [`do`](../do/SKILL.md) — meta-orchestrator, picks among these skills.
+- [`rfc`](../rfc/SKILL.md) — update RFC after the team finishes.

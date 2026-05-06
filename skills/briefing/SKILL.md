@@ -1,62 +1,76 @@
 ---
 name: briefing
-description: Утренний briefing по задачам и сообщениям — собирает overdue, due today, @mentions, unread chats, project stats из доступного task tracker (Orchestra MCP, Linear MCP, Jira MCP, GitHub Issues) или из локальных TODO-файлов. Используется в начале рабочего дня или когда пользователь спрашивает «что у меня сегодня», «что висит», «morning standup». Триггеры (EN/RU) — "daily briefing", "what's on my plate", "morning standup", "что у меня сегодня", "что висит", "брифинг", "standup", "/briefing".
+description: Morning briefing on tasks and messages — collects overdue, due today, @mentions, unread chats, and project stats from any available task tracker (Orchestra MCP, Linear MCP, Jira MCP, GitHub Issues) or from local TODO files. Use at the start of the workday or when the user asks "what's on my plate", "morning standup", or similar. Triggers (EN/RU) — "daily briefing", "what's on my plate", "morning standup", "что у меня сегодня", "что висит", "брифинг", "standup", "/briefing".
 ---
 
 # Daily Briefing
 
-10-секундный утренний снимок: overdue, today, @mentions, unread, статистика проектов.
-Скилл — task-tracker-agnostic: работает с любым доступным MCP (Orchestra, Linear, Jira,
-Asana, GitHub Issues) или, в крайнем случае, с локальными TODO-файлами проекта.
+A 10-second morning snapshot: overdue, today, @mentions, unread, project stats.
+The skill is task-tracker-agnostic — it works with any available MCP (Orchestra,
+Linear, Jira, Asana, GitHub Issues) or, as a last resort, with local project
+TODO files.
 
 ---
 
-## Когда использовать
+## Project context (read first)
 
-- Старт рабочего дня — пользователь хочет одной командой увидеть, на что обратить внимание.
-- Пользователь спрашивает: «что у меня сегодня», «что висит», «standup», «брифинг», «что нового».
-- Опциональный фокус — название проекта или режим `urgent` (только overdue + mentions + unread).
+If the project ran `/setup`, the concrete issue tracker is wired into:
 
-## Когда НЕ использовать
+- `@docs/agents/issue-tracker.md` — which tracker is in use, which commands/MCPs
+  list/create issues, which labels map to canonical triage roles.
 
-- Нужен code-context, а не task-context — используй [`restore`](../restore/SKILL.md).
-- Нет ни одного task tracker'а и нет TODO-файлов — скилл не сможет сделать briefing, скажи об этом и предложи альтернативу.
-- Пользователь хочет полный обзор проекта (архитектура, прогресс по RFC) — это [`research`](../research/SKILL.md).
+Check via `test -f docs/agents/issue-tracker.md`. If present, use the tracker
+from there directly (don't probe again). If absent, detect as before:
+`mcp__orch__*` → `gh` CLI → Linear MCP → glob TODO files.
 
 ---
 
-## Обнаружение источника данных (mandatory first step)
+## When to use
 
-Перед сбором данных выясни, **какой источник доступен** — перечислены по приоритету:
+- Start of the workday — the user wants a single command surfacing what to focus on.
+- The user asks: "what's on my plate", "what's hanging", "standup", "briefing", "what's new".
+- Optional focus — a project name, or `urgent` mode (only overdue + mentions + unread).
 
-| Источник | Как обнаружить | Инструменты |
+## When NOT to use
+
+- The user needs code context, not task context — use [`restore`](../restore/SKILL.md).
+- No task tracker and no TODO files — the skill can't produce a briefing; say so and offer an alternative.
+- The user wants a full project overview (architecture, RFC progress) — that's [`research`](../research/SKILL.md).
+
+---
+
+## Source detection (mandatory first step)
+
+Before collecting data, find out **which source is available** — listed in priority order:
+
+| Source | How to detect | Tools |
 |---|---|---|
-| **Orchestra MCP** | `mcp__orch__*` или `mcp__orchestra__*` присутствуют | `get_current_context`, `get_workspace_overview`, `get_unread_chats`, `get_mentions`, `query_entities` |
-| **Linear MCP** | `mcp__linear__*` доступен | `list_my_issues`, `list_assigned_issues` |
-| **Jira MCP** | `mcp__jira__*` или `mcp__atlassian__*` | `search_issues`, `get_my_issues` |
-| **GitHub Issues** | `gh` CLI в PATH (через Bash) | `gh issue list --assignee @me --state open` |
-| **Локальные TODO** | Файлы `TODO.md`, `TODO_*.md`, `**/docs/TODO.md` | Read + Grep |
+| **Orchestra MCP** | `mcp__orch__*` or `mcp__orchestra__*` present | `get_current_context`, `get_workspace_overview`, `get_unread_chats`, `get_mentions`, `query_entities` |
+| **Linear MCP** | `mcp__linear__*` available | `list_my_issues`, `list_assigned_issues` |
+| **Jira MCP** | `mcp__jira__*` or `mcp__atlassian__*` | `search_issues`, `get_my_issues` |
+| **GitHub Issues** | `gh` CLI on PATH (via Bash) | `gh issue list --assignee @me --state open` |
+| **Local TODO** | `TODO.md`, `TODO_*.md`, `**/docs/TODO.md` | Read + Grep |
 
-Если ничего не найдено — кратко скажи пользователю и предложи указать источник или использовать [`restore`](../restore/SKILL.md).
-
----
-
-## Входные данные
-
-`$ARGUMENTS` — опциональный модификатор:
-
-- пусто → полный briefing.
-- `urgent` → только overdue + @mentions + unread.
-- название проекта → фильтр по проекту.
-- `full` → всё включая starred / saved.
+If nothing is found — tell the user briefly and offer to specify a source or use [`restore`](../restore/SKILL.md).
 
 ---
 
-## Процесс
+## Input
 
-### 1. Параллельный сбор (источник-зависимый)
+`$ARGUMENTS` — optional modifier:
 
-#### Если Orchestra MCP доступен:
+- empty → full briefing.
+- `urgent` → only overdue + @mentions + unread.
+- project name → filter by project.
+- `full` → everything including starred / saved.
+
+---
+
+## Process
+
+### 1. Parallel collection (source-dependent)
+
+#### If Orchestra MCP is available:
 
 ```
 mcp__orch__get_current_context()
@@ -71,49 +85,49 @@ mcp__orch__query_entities(repoType="folder", repoUid="assigned_to_me")
 mcp__orch__query_entities(repoType="folder", repoUid="recently_completed")
 ```
 
-Все запросы — в одном tool-call message (они независимы).
+Fire all queries in a single tool-call message (they're independent).
 
-#### Если Linear / Jira / GitHub Issues:
+#### If Linear / Jira / GitHub Issues:
 
-Аналогично — параллельные вызовы соответствующих инструментов:
+Same pattern — parallel calls to the relevant tools:
 
-- мои назначенные таски, статус Open
-- overdue (фильтр по due date < сегодня)
-- recently completed за 7 дней
-- упоминания в комментариях (если поддерживается)
+- my assigned tasks, status Open
+- overdue (filter by due date < today)
+- recently completed in the last 7 days
+- comment mentions (if supported)
 
-#### Если только локальные TODO:
+#### If only local TODOs:
 
 ```bash
-# найди все TODO-файлы
+# find every TODO file
 find . -maxdepth 4 -name "TODO*.md" -not -path "*/node_modules/*" -not -path "*/.git/*"
 ```
 
-Прочти их и парси:
+Read and parse:
 
-- `[ ]` без даты → backlog
-- `[ ]` с датой `(YYYY-MM-DD)` в прошлом → overdue
-- `[ ]` с датой = today → due today
-- `[x]` — completed (за последние 7 дней по git blame, если хочешь точно)
+- `[ ]` without a date → backlog
+- `[ ]` with date `(YYYY-MM-DD)` in the past → overdue
+- `[ ]` with date = today → due today
+- `[x]` — completed (last 7 days via git blame, if you want precision)
 
-### 2. Применение фильтра (`$ARGUMENTS`)
+### 2. Apply the filter (`$ARGUMENTS`)
 
-- `urgent` → только Overdue + Unread + Mentions + Recommended Actions.
-- название проекта → фильтрация всех секций по проекту.
-- пусто/`full` → всё.
+- `urgent` → only Overdue + Unread + Mentions + Recommended Actions.
+- project name → filter every section by project.
+- empty/`full` → everything.
 
-### 3. Презентация
+### 3. Presentation
 
-Формат вывода — таблицы с фиксированными колонками:
+Output format — fixed-column tables:
 
 ```markdown
 # Daily Briefing — $DATE
 
-**Источник**: $SOURCE  | **User**: $USER
+**Source**: $SOURCE  | **User**: $USER
 
 ---
 
-## Срочное внимание
+## Urgent attention
 
 ### Overdue ($COUNT)
 | Task | Project | Due | Days Late | Priority |
@@ -126,7 +140,7 @@ find . -maxdepth 4 -name "TODO*.md" -not -path "*/node_modules/*" -not -path "*/
 
 ---
 
-## Сегодня
+## Today
 
 ### Due Today ($COUNT)
 | Task | Project | Status | Priority |
@@ -142,7 +156,7 @@ find . -maxdepth 4 -name "TODO*.md" -not -path "*/node_modules/*" -not -path "*/
 ---
 
 ## Quick Stats
-| Метрика | Count |
+| Metric | Count |
 | Total active tasks | N |
 | Assigned to me | N |
 | Due today | N |
@@ -157,41 +171,41 @@ find . -maxdepth 4 -name "TODO*.md" -not -path "*/node_modules/*" -not -path "*/
 2. **[Priority]** [action] — [reason]
 ```
 
-Пустые секции (0 items) — **не выводи**, кроме Quick Stats (всегда).
+Empty sections (0 items) — **don't print** them, except Quick Stats (always shown).
 
-### 4. Recommended Actions — логика
+### 4. Recommended Actions — logic
 
-- Overdue → «Update or close: …».
-- Unread (>5) → «Read most active chat: …».
-- @Mentions → «Reply: …».
-- Tasks в "Doing" >3 дней → «Move to Review or close: …».
-- Reminders due today → напомни.
+- Overdue → "Update or close: …".
+- Unread (>5) → "Read most active chat: …".
+- @Mentions → "Reply: …".
+- Tasks in "Doing" >3 days → "Move to Review or close: …".
+- Reminders due today → remind.
 
 ---
 
-## Режимы (через `$ARGUMENTS`)
+## Modes (via `$ARGUMENTS`)
 
 ### `urgent`
 
-Только Overdue + Unread + Mentions + Recommended. Идеально, когда пользователь забегает «между делом».
+Only Overdue + Unread + Mentions + Recommended. Ideal when the user is checking in between meetings.
 
-### Имя проекта (e.g. `Development`)
+### Project name (e.g. `Development`)
 
-Все секции, но отфильтрованные по проекту. Используй native фильтр источника (Orchestra `repoType="project"`, Linear `team`, Jira `project=`).
+All sections, filtered by project. Use the source's native filter (Orchestra `repoType="project"`, Linear `team`, Jira `project=`).
 
 ### `full`
 
-Всё, включая starred / reminders / saved. По умолчанию — компактный режим без них.
+Everything, including starred / reminders / saved. Default mode is compact and skips them.
 
 ---
 
-## Связанные скиллы
+## Related skills
 
-- [`restore`](../restore/SKILL.md) — code-side восстановление контекста (git, memory).
-- [`do`](../do/SKILL.md) — после briefing'а часто запускают конкретную задачу.
+- [`restore`](../restore/SKILL.md) — code-side context restoration (git, memory).
+- [`do`](../do/SKILL.md) — after a briefing, users often launch a specific task.
 
 ## Anti-patterns
 
-- **Не выдумывай задачи**, если ни одного источника нет — лучше честно сказать «нет данных».
-- **Не выводи 50 строк, когда 5** — режим `urgent` существует для этого.
-- **Не рекомендуй действий «вообще»** — рекомендация без конкретного task UID/ссылки бесполезна.
+- **Don't invent tasks** when no source is available — say "no data" honestly.
+- **Don't print 50 lines when 5 will do** — that's what `urgent` mode is for.
+- **Don't recommend generic actions** — a recommendation without a concrete task UID/link is useless.

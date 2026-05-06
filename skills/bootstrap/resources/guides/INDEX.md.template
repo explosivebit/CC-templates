@@ -1,10 +1,10 @@
 # guides/INDEX
 
-Локальный индекс методических гайдов проекта. Эти гайды — авторская база,
-источник истины по процессу. Не дублируй содержимое гайдов в других местах —
-ссылайся на файлы ниже.
+Local index of the project's process guides. These guides are the author's
+canonical baseline — the source of truth for process. Don't duplicate their
+content elsewhere — link to the files below.
 
-<!-- bootstrap: оставь только те строки, для гайдов, которые реально скопированы. -->
+<!-- bootstrap: keep only the lines for guides that were actually copied. -->
 
-- [CLAUDE-MD-GUIDE.ru.md](CLAUDE-MD-GUIDE.ru.md) — как писать `CLAUDE.md` с учётом слабостей LLM (U-кривая attention, cry-wolf, dilution, redundancy cost).
-- [GIT-FLOW-GUIDE.ru.md](GIT-FLOW-GUIDE.ru.md) — Git Flow + Conventional Commits + PR-процесс + SemVer + safety-правила против AI-деструкции.
+- [CLAUDE-MD-GUIDE.ru.md](CLAUDE-MD-GUIDE.ru.md) — how to write `CLAUDE.md` accounting for LLM weaknesses (U-curve attention, cry-wolf, dilution, redundancy cost).
+- [GIT-FLOW-GUIDE.ru.md](GIT-FLOW-GUIDE.ru.md) — Git Flow + Conventional Commits + PR process + SemVer + safety rules against AI-driven destruction.

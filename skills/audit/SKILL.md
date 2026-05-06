@@ -1,128 +1,147 @@
 ---
 name: audit
-description: Многоэкспертный аудит кода / архитектуры / завершённой фичи — минимум 4 параллельных агента-ревьюера со специализациями (логика, архитектура/SOLID, типизация, безопасность; опционально — тесты, бэкенд-паттерны, фронтенд, task-completion). Каждый — со своим чек-листом. Финал — кросс-валидация, score, verdict, action plan. Используется, когда пользователь хочет «чёткую вторую пару глаз» на код, PR, branch diff, спринт. Триггеры (EN/RU) — "audit", "review", "проверь код", "ревью", "оцени качество", "всё ли правильно", "code audit", "expert review", "/audit".
+description: Multi-expert audit of code, architecture, or a finished feature — at least 4 parallel reviewer agents, each with a specialization (logic, architecture/SOLID, typing, security; optionally tests, backend patterns, frontend, task-completion). Each runs its own checklist. Output is cross-validation, score, verdict, and action plan. Use when the user wants a sharp second pair of eyes on code, a PR, a branch diff, or a sprint. Triggers (EN/RU) — "audit", "review", "проверь код", "ревью", "оцени качество", "всё ли правильно", "code audit", "expert review", "/audit".
 ---
 
 # Multi-Expert Audit
 
-Панель из ≥4 агентов с разными скиллами проверяет код одновременно. Опирается на
-[`team`](../team/SKILL.md) (Mode A/B,
-cleanup) — здесь живёт audit-recipe и чек-листы доменов.
+A panel of 4+ agents with different skills reviews code in parallel. Builds on
+[`team`](../team/SKILL.md) (Mode A/B, cleanup) — the audit recipe and domain
+checklists live here.
 
 ---
 
-## Когда использовать
+## Project Context (read first)
 
-- Готова фича / спринт / PR — нужна тщательная проверка.
-- Пользователь говорит: «проверь», «ревью», «аудит», «оцени качество», «всё ли правильно», "review", "audit".
-- Перед мерджем большой ветки.
-- После реализации по RFC — нужно сверить «сделали vs. просили».
+If `/setup` has been run in the project, concrete paths and commands live in:
 
-## Когда НЕ использовать
+- `@docs/agents/paths.md` — where source, tests, and docs live
+- `@docs/agents/build-config.md` — build/test/lint/typecheck commands for post-audit verification
+- `@CONTEXT.md` — domain glossary (use when reasoning about business logic)
 
-- Несколько строк кода — линтера/типчекера достаточно.
-- Просто синтаксический фикс — code-reviewer как single agent.
-- Только архитектурный совет, без чтения кода — single agent с `architect-reviewer`.
+Check via `test -f docs/agents/paths.md`. If present — pass the contents into each
+reviewer's prompt. If not — auto-detect: glob over sources, read `package.json`,
+`Cargo.toml`, or `go.mod` for commands.
 
----
-
-## Core Rule: минимум 4 агента
-
-Каждый аудит = **минимум 4 специализированных агента**, выполняющих параллельно.
-Меньше — это не аудит, а point review. Больше 6 — token explosion.
+Never assume specific paths or stack — read `docs/agents/*.md` or discover in the
+current session.
 
 ---
 
-## Архитектура (4 фазы)
+## When to Use
 
-| Фаза | Что делает |
+- A feature, sprint, or PR is ready and needs a thorough review.
+- The user says "review", "audit", "проверь", "оцени качество", "всё ли правильно".
+- Before merging a large branch.
+- After implementing an RFC — verify "delivered vs. requested".
+
+## When Not to Use
+
+- A few lines of code — a linter or typechecker is enough.
+- A simple syntax fix — use code-reviewer as a single agent.
+- Pure architectural advice without reading code — single agent with `architect-reviewer`.
+
+---
+
+## Core Rule: Minimum 4 Agents
+
+Every audit = **at least 4 specialized agents**, running in parallel. Fewer is a
+point review, not an audit. More than 6 = token explosion.
+
+---
+
+## Architecture (4 Phases)
+
+| Phase | What it does |
 |---|---|
-| **1. Scope Analysis** | Определи что именно проверяем; найди оригинальную постановку (RFC/TODO/issue); выбери панель |
-| **2. Parallel Review** | Запусти 4–6 агентов параллельно через TeamCreate |
-| **3. Task Completion Check** | Сверь «сделано vs. просили» |
-| **4. Synthesis & Verdict** | Кросс-валидация, score, verdict, action plan |
+| **1. Scope Analysis** | Identify what to review; find the original spec (RFC/TODO/issue); pick the panel |
+| **2. Parallel Review** | Spawn 4–6 agents in parallel via TeamCreate |
+| **3. Task Completion Check** | Compare "delivered vs. requested" |
+| **4. Synthesis & Verdict** | Cross-validation, score, verdict, action plan |
 
 ---
 
-## Фаза 1: Scope Analysis
+## Phase 1: Scope Analysis
 
-### 1a. Что проверяем
+### 1a. What to Review
 
-Парсинг `$ARGUMENTS`:
+Parse `$ARGUMENTS`:
 
-| Сигнал | Действие |
+| Signal | Action |
 |---|---|
-| Конкретные файлы | Read их целиком, передай в prompts |
-| Фича / модуль | Glob + Grep, собери все relevant files |
-| «последние изменения» | `git diff HEAD~1` или `git diff --staged` |
+| Specific files | Read them in full, embed in prompts |
+| Feature / module | Glob + Grep, collect all relevant files |
+| "latest changes" | `git diff HEAD~1` or `git diff --staged` |
 | `PR #N` | `gh pr diff N` |
-| RFC reference | Найди RFC файл, извлеки phases/tasks |
-| «спринт» / «sprint X» | Найти все файлы изменённые за спринт |
+| RFC reference | Find the RFC file, extract phases/tasks |
+| "sprint" / "sprint X" | Find all files changed during the sprint |
 
-### 1b. Найти оригинальную задачу (для Phase 3)
+### 1b. Find the Original Task (for Phase 3)
 
-Источник «что просили»:
+Sources of "what was requested":
 
-- RFC / design doc — секция Phase / Implementation TODO.
-- TODO file — конкретные `[x]/[ ]` items по теме.
-- Sprint plan (если был [`sprint`](../sprint/SKILL.md)).
-- Имя ветки (часто содержит RFC/issue).
-- GitHub Issue / Linear ticket (если упомянут).
+- RFC / design doc — Phase or Implementation TODO section.
+- TODO file — specific `[x]/[ ]` items on the topic.
+- Sprint plan (if [`sprint`](../sprint/SKILL.md) was used).
+- Branch name (often references RFC/issue).
+- GitHub Issue / Linear ticket (if mentioned).
 
-Если ничего не найдено — Phase 3 пропусти, отметь в финальном отчёте.
+If nothing is found — skip Phase 3 and note it in the final report.
 
 ### 1c. FILE_LIST
 
-До 30 файлов. Для файлов >500 строк — пропусти только релевантные секции (или оригинальный diff).
+Up to 30 files. For files >500 lines — pass only relevant sections (or the
+original diff).
 
-### 1d. Выбор панели (минимум 4, максимум 6)
+### 1d. Panel Selection (min 4, max 6)
 
-#### Обязательные 4 — всегда:
+#### Mandatory 4 — always:
 
-| # | Имя агента | subagent_type (примеры) | Фокус | Чек-лист (см. ниже) |
+| # | Agent name | subagent_type (examples) | Focus | Checklist (see below) |
 |---|---|---|---|---|
-| 1 | `logic-reviewer` | `code-reviewer` / `general-purpose` | Логика + бизнес-корректность | Алгоритмы, edge cases, race conditions, idempotency |
-| 2 | `arch-reviewer` | `architect-reviewer` / `architect-review` | SOLID + архитектура | DI, dependency direction, patterns, over-engineering |
-| 3 | `type-reviewer` | `typescript-pro` / `typescript-type-auditor` или (для других языков) `general-purpose` | Типизация / type safety | `any`/casts/non-null, generic constraints, schema↔type alignment |
-| 4 | `security-reviewer` | `security-auditor` / `security-expert` | Безопасность + error handling | OWASP, injection, PII, swallowed errors, DoS |
+| 1 | `logic-reviewer` | `code-reviewer` / `general-purpose` | Logic + business correctness | Algorithms, edge cases, race conditions, idempotency |
+| 2 | `arch-reviewer` | `architect-reviewer` / `architect-review` | SOLID + architecture | DI, dependency direction, patterns, over-engineering |
+| 3 | `type-reviewer` | `typescript-pro` / `typescript-type-auditor` or (other languages) `general-purpose` | Typing / type safety | `any`/casts/non-null, generic constraints, schema↔type alignment |
+| 4 | `security-reviewer` | `security-auditor` / `security-expert` | Security + error handling | OWASP, injection, PII, swallowed errors, DoS |
 
-Для нет-TS проектов — Type-reviewer становится `lint-reviewer` (статический анализ, mypy/clippy/etc).
+For non-TS projects, type-reviewer becomes `lint-reviewer` (static analysis,
+mypy/clippy/etc).
 
-#### Опциональные (по scope):
+#### Optional (by scope):
 
-| # | Имя | Когда |
+| # | Name | When |
 |---|---|---|
-| 5 | `test-reviewer` | Есть тесты или они должны быть |
-| 6 | `backend-reviewer` (`backend-architect` / `microservices-architect`) | Бэкенд-сервисы, inter-service, persistence |
+| 5 | `test-reviewer` | Tests exist or should exist |
+| 6 | `backend-reviewer` (`backend-architect` / `microservices-architect`) | Backend services, inter-service, persistence |
 | 7 | `frontend-reviewer` (`frontend-developer` / `nextjs-developer`) | UI, state, UX |
-| 8 | `task-reviewer` (`general-purpose`) | Есть RFC/TODO с явным чек-листом — нужна верификация полноты |
+| 8 | `task-reviewer` (`general-purpose`) | RFC/TODO with explicit checklist — completeness verification needed |
 
-### 1e. Матрица выбора
+### 1e. Selection Matrix
 
-| Scope | Панель (≥4) |
+| Scope | Panel (≥4) |
 |---|---|
 | Backend feature | logic + arch + type + security + test (5) |
 | Full-stack feature | logic + arch + type + security + frontend + test (6) |
 | Microservices | logic + arch + type + security + backend (5) |
-| Только types/interfaces | logic + arch + type + security (4) |
+| Types/interfaces only | logic + arch + type + security (4) |
 | Sprint/RFC completion | logic + arch + type + security + test + task (6) |
 | Quick review | logic + arch + type + security (4) |
 
 ---
 
-## Фаза 2: Parallel Review
+## Phase 2: Parallel Review
 
-`TeamCreate(team_name="audit-{scope}")` + параллельный спавн всех агентов в одном message.
+`TeamCreate(team_name="audit-{scope}")` + spawn all agents in parallel in a single message.
 
-### Шаблон промпта (общий)
+### Prompt Template (shared)
 
 ```
 ## Expert Audit Assignment
 
-**Role**: {ваша специализация}
+**Role**: {your specialization}
 **Scope**: {file list}
-**Context**: {что собиралось / менялось}
-**Original Task**: {RFC/TODO ref — что просили}
+**Context**: {what was built / changed}
+**Original Task**: {RFC/TODO ref — what was requested}
 
 ### Task
 Review the code from YOUR expert perspective. Be CRITICAL but fair.
@@ -172,97 +191,97 @@ ONE of: APPROVE | APPROVE_WITH_FIXES | REQUEST_CHANGES | REJECT
 
 #### logic-reviewer
 
-- Алгоритмическая корректность.
+- Algorithmic correctness.
 - Edge cases: null, undefined, empty, 0, negative, very large.
 - Race conditions: concurrent access, shared mutable state.
 - Off-by-one, boundary conditions.
-- Fire-and-forget — ошибки не теряются молча?
-- Кеширование: invalidation, stale data, thundering herd.
-- Идемпотентность: повторный вызов безопасен?
+- Fire-and-forget — are errors lost silently?
+- Caching: invalidation, stale data, thundering herd.
+- Idempotency: is a repeated call safe?
 - Resource cleanup (listeners, timers, connections, file handles).
 
 #### arch-reviewer (SOLID + Architecture)
 
 - **S**: Single Responsibility.
-- **O**: Open/Closed — расширение без модификации.
+- **O**: Open/Closed — extension without modification.
 - **L**: Liskov Substitution.
-- **I**: Interface Segregation — интерфейсы не раздуты.
-- **D**: Dependency Inversion — на абстракции, не на конкретные классы.
-- DI через конструкторы, нет monkey-patching.
-- Direction: нет circular deps.
+- **I**: Interface Segregation — interfaces not bloated.
+- **D**: Dependency Inversion — depend on abstractions, not concrete classes.
+- DI through constructors, no monkey-patching.
+- Direction: no circular deps.
 - Over-engineering vs under-engineering.
-- Consistency с существующими паттернами кодовой базы (изучить аналогичные модули).
-- Error model — типизированные ошибки vs generic exceptions.
+- Consistency with existing codebase patterns (study analogous modules).
+- Error model — typed errors vs generic exceptions.
 
-#### type-reviewer (TS / Rust / Python с type hints / etc.)
+#### type-reviewer (TS / Rust / Python with type hints / etc.)
 
-- `any` / `unknown` — каждый `any` потенциальный runtime баг.
+- `any` / `unknown` — every `any` is a potential runtime bug.
 - `as` casts / unsafe coercions.
-- Non-null assertions (`!`) — где можно type guard.
-- Generic constraints корректны.
-- Duck typing: shape совпадает с реальными данными?
+- Non-null assertions (`!`) — where a type guard would do.
+- Generic constraints correct.
+- Duck typing: does the shape match real data?
 - Schema (Zod/Pydantic/etc.) ↔ type alignment.
-- Discriminated unions для state machines.
+- Discriminated unions for state machines.
 - Inline types vs named exports (DRY).
-- На boundaries — `unknown` + parsing вместо `any`.
+- At boundaries — `unknown` + parsing instead of `any`.
 
 #### security-reviewer
 
 - OWASP Top 10: injection, XSS, SSRF, path traversal, IDOR, broken auth.
-- Input validation на boundaries (user input, API params, file uploads).
-- Encoding output (`encodeURIComponent`, HTML escape, SQL params).
-- PII / sensitive data: не логируется, не сохраняется в открытом виде.
-- Error handling: try/catch, нет swallowed errors без причины.
+- Input validation at boundaries (user input, API params, file uploads).
+- Output encoding (`encodeURIComponent`, HTML escape, SQL params).
+- PII / sensitive data: not logged, not stored in plaintext.
+- Error handling: try/catch, no swallowed errors without reason.
 - DoS vectors: unbounded loops, arrays, memory growth.
-- Limits на user input (size, rate, count).
-- Tenant / authorization isolation на каждом уровне.
-- Secrets: нет hardcoded, проверка env vars.
+- Limits on user input (size, rate, count).
+- Tenant / authorization isolation at every layer.
+- Secrets: no hardcoded values, env vars verified.
 
 #### test-reviewer
 
-- Все public methods покрыты тестами.
+- All public methods covered by tests.
 - Edge cases: empty, error, timeout, null.
-- Negative tests: что если всё сломается?
-- Mock quality: реалистичные моки, не stub-заглушки.
-- Backward compatibility: старый код не сломан.
-- Integration: E2E flow покрыт?
-- Determinism: тесты не flaky.
-- Test isolation: нет shared state.
-- Missing tests: конкретный список с обоснованием.
+- Negative tests: what if everything breaks?
+- Mock quality: realistic mocks, not stub placeholders.
+- Backward compatibility: old code not broken.
+- Integration: E2E flow covered?
+- Determinism: tests not flaky.
+- Test isolation: no shared state.
+- Missing tests: concrete list with rationale.
 
 #### backend-reviewer
 
 - Service boundary violations.
-- Inter-service communication: правильный ли механизм?
-- Tenant / auth isolation в каждом query / action.
-- Idempotency и retry safety.
-- Event-driven patterns: правильный ли transport?
-- Error resilience: что если зависимость недоступна?
+- Inter-service communication: right mechanism?
+- Tenant / auth isolation in every query / action.
+- Idempotency and retry safety.
+- Event-driven patterns: right transport?
+- Error resilience: what if a dependency is down?
 - Resource cleanup: connections, listeners.
 - Observability: traces, metrics, structured logs.
 
 #### frontend-reviewer
 
-- State management: где живёт state, не дублирован ли.
-- API data — в правильном кеш-слое (Query/SWR), не в client store.
+- State management: where state lives, no duplication.
+- API data — in the right cache layer (Query/SWR), not in the client store.
 - Components: composability, props vs context.
-- Accessibility (a11y): ARIA, keyboard nav, контраст.
+- Accessibility (a11y): ARIA, keyboard nav, contrast.
 - Performance: rerenders, memoization, code splitting.
 - UX: loading / error / empty states.
-- Routing: правильное использование роутера.
+- Routing: correct router usage.
 
 #### task-reviewer
 
-- Каждый item из RFC / TODO / spec — реализован?
-- Реализован буквально или иначе? Если иначе — почему?
-- Документация / changelog обновлены?
-- Tests для каждого нового item?
+- Every item from RFC / TODO / spec — implemented?
+- Implemented literally or differently? If differently — why?
+- Docs / changelog updated?
+- Tests for each new item?
 
 ---
 
-## Фаза 3: Task Completion Check
+## Phase 3: Task Completion Check
 
-После всех reports — leader строит таблицу:
+After all reports — the leader builds a table:
 
 ```markdown
 ### Task Completion Matrix
@@ -275,21 +294,21 @@ ONE of: APPROVE | APPROVE_WITH_FIXES | REQUEST_CHANGES | REJECT
 ### Completion Rate: X/Y tasks (Z%)
 ```
 
-Если completion < 80% → verdict не может быть APPROVE.
+If completion < 80% → verdict cannot be APPROVE.
 
 ---
 
-## Фаза 4: Synthesis & Verdict
+## Phase 4: Synthesis & Verdict
 
-### 4a. Кросс-референс
+### 4a. Cross-Reference
 
-- **Consensus** (несколько агентов flag'нули одно) → high confidence.
-- **Unique** (один агент заметил) → verify importance.
-- **Conflict** (агенты не согласны) → представь обе стороны.
+- **Consensus** (multiple agents flag the same issue) → high confidence.
+- **Unique** (one agent caught it) → verify importance.
+- **Conflict** (agents disagree) → present both sides.
 
 ### 4b. Overall Score
 
-Взвешенное среднее (1-10):
+Weighted average (1-10):
 
 | Agent | Weight | Reason |
 |---|---|---|
@@ -304,14 +323,14 @@ ONE of: APPROVE | APPROVE_WITH_FIXES | REQUEST_CHANGES | REJECT
 
 ### 4c. Final Verdict
 
-| Условие | Verdict |
+| Condition | Verdict |
 |---|---|
-| Все APPROVE + completion ≥ 80% | **APPROVE** |
-| Большинство APPROVE, часть APPROVE_WITH_FIXES | **APPROVE_WITH_FIXES** |
-| Любой REQUEST_CHANGES | **REQUEST_CHANGES** |
-| Любой REJECT или completion < 50% | **REJECT** |
+| All APPROVE + completion ≥ 80% | **APPROVE** |
+| Majority APPROVE, some APPROVE_WITH_FIXES | **APPROVE_WITH_FIXES** |
+| Any REQUEST_CHANGES | **REQUEST_CHANGES** |
+| Any REJECT or completion < 50% | **REJECT** |
 
-### 4d. Финальный отчёт
+### 4d. Final Report
 
 ```markdown
 # Audit Report: {target}
@@ -348,14 +367,14 @@ ONE of: APPROVE | APPROVE_WITH_FIXES | REQUEST_CHANGES | REJECT
 3. [NICE-TO-HAVE] ...
 ```
 
-### 4e. Спроси пользователя
+### 4e. Ask the User
 
 ```
-Варианты:
-1. ✅ Применить ВСЕ исправления (critical + warnings)
-2. 🔧 Только critical
-3. 📋 Показать каждое по одному
-4. ❌ Отклонить — сделаю сам
+Options:
+1. ✅ Apply ALL fixes (critical + warnings)
+2. 🔧 Critical only
+3. 📋 Walk through one by one
+4. ❌ Reject — I'll do it myself
 ```
 
 ---
@@ -363,43 +382,44 @@ ONE of: APPROVE | APPROVE_WITH_FIXES | REQUEST_CHANGES | REJECT
 ## Token Budget
 
 - Max 6 agents per audit.
-- Файлы — встраивай в промпт (агент не должен re-read'ить).
-- Большие файлы (>500 строк) — только relevant sections / diff.
-- Каждый prompt: ≤8000 tokens.
-- Каждый response: ~1500–2500 tokens.
+- Files — embed in the prompt (the agent should not re-read them).
+- Large files (>500 lines) — only relevant sections / diff.
+- Each prompt: ≤8000 tokens.
+- Each response: ~1500–2500 tokens.
 
 ---
 
-## Error handling
+## Error Handling
 
-| Симптом | Действие |
+| Symptom | Action |
 |---|---|
-| Агент упал/timeout | Отметь в отчёте, не блокируй других |
-| Scope пуст | Спроси пользователя |
-| Scope > 30 файлов | Разбей или попроси пользователя сузить |
-| Все APPROVE, но type-check / build fails | Override до REQUEST_CHANGES |
-| Нет RFC/TODO | Skip Phase 3, отметь в отчёте |
+| Agent crashed/timed out | Note in the report, don't block others |
+| Empty scope | Ask the user |
+| Scope > 30 files | Split or ask the user to narrow |
+| All APPROVE, but type-check / build fails | Override to REQUEST_CHANGES |
+| No RFC/TODO | Skip Phase 3, note in the report |
 
 ---
 
 ## Cleanup
 
-После synthesis — shutdown teammates → `TeamDelete()` (Mode A) / просто дождись завершения (Mode B). См. cleanup checklist в [`team`](../team/SKILL.md).
+After synthesis — shutdown teammates → `TeamDelete()` (Mode A) / just wait for
+completion (Mode B). See cleanup checklist in [`team`](../team/SKILL.md).
 
 ---
 
-## Связанные скиллы
+## Related Skills
 
-- [`team`](../team/SKILL.md) — фундамент (Mode A/B, file ownership, cleanup).
-- [`research`](../research/SKILL.md) — пред-аудит исследование.
-- [`sprint`](../sprint/SKILL.md) — после спринта обычно идёт audit.
-- [`do`](../do/SKILL.md) — pipeline `sprint → audit`.
-- [`rfc`](../rfc/SKILL.md) — обновление RFC после audit (Implementation Log + Insights).
+- [`team`](../team/SKILL.md) — foundation (Mode A/B, file ownership, cleanup).
+- [`research`](../research/SKILL.md) — pre-audit research.
+- [`sprint`](../sprint/SKILL.md) — audit usually follows a sprint.
+- [`do`](../do/SKILL.md) — `sprint → audit` pipeline.
+- [`rfc`](../rfc/SKILL.md) — update RFC after audit (Implementation Log + Insights).
 
 ## Anti-patterns
 
-- **Меньше 4 агентов** — это не аудит, а point review.
-- **Один агент с большим promptом «проверь всё»** — теряется фокус по доменам.
-- **Score 8/10 без consensus issues** — подозрительно, попроси cross-validate.
-- **APPROVE при completion 50%** — нарушение правила Phase 3.
-- **Файлы переданы по ссылкам, а не по содержимому** — агенты re-read'ят и сжигают tokens.
+- **Fewer than 4 agents** — that's a point review, not an audit.
+- **One agent with a giant "review everything" prompt** — domain focus is lost.
+- **Score 8/10 without consensus issues** — suspicious, ask for cross-validation.
+- **APPROVE at 50% completion** — violates the Phase 3 rule.
+- **Files passed by reference instead of content** — agents re-read and burn tokens.
