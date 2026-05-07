@@ -1,58 +1,58 @@
 # snippets/
 
-Мелкие переиспользуемые куски: конфиг hook-ов, блок `permissions`, регексы,
-markdown-чеклисты, фрагменты `settings.json`.
+Small reusable fragments: hook configs, `permissions` blocks, regexes,
+markdown checklists, `settings.json` snippets.
 
-Снипет — это **фрагмент**, а не самостоятельный артефакт. Он вставляется
-внутрь другого файла.
+A snippet is a **fragment**, not a standalone artifact. It's pasted into
+another file.
 
 ---
 
-## Организация
+## Layout
 
 ```
 snippets/
-├── hooks/                  # примеры hook-конфигов для settings.json
-├── permissions/            # блоки permissions (allow/deny списки)
-├── checklists/             # markdown-чеклисты для PR, code review
-├── regex/                  # полезные регулярные выражения
-└── frontmatter/            # готовые frontmatter-блоки
+├── hooks/                  # hook config examples for settings.json
+├── permissions/            # permissions blocks (allow/deny lists)
+├── checklists/             # markdown checklists for PRs, code review
+├── regex/                  # useful regular expressions
+└── frontmatter/            # ready-made frontmatter blocks
 ```
 
 ---
 
-## Шаблон файла `<folder>/<name>.md`
+## `<folder>/<name>.md` template
 
 ```markdown
-# <Название снипета>
+# <Snippet name>
 
-**Назначение**: куда и зачем вставляется.
-**Куда вставить**: путь / контекст (например: `~/.claude/settings.json`,
-секция `hooks.PostToolUse`).
-
----
-
-```<язык>
-<тело снипета>
-```
-
-## Заметки
-
-- Зависимости, нюансы, что нужно подправить под проект.
-```
+**Purpose**: where it goes and why.
+**Where to paste**: path / context (e.g. `~/.claude/settings.json`,
+`hooks.PostToolUse` section).
 
 ---
 
-## Правила
+```<language>
+<snippet body>
+```
 
-- Снипет — **маленький**. Если получилось >100 строк — это уже не снипет,
-  а темплейт, положи в `templates/`.
-- Всегда указывай **куда** его вставлять — иначе через месяц непонятно,
-  зачем он лежит.
-- Не дублируй снипеты в разных местах; если нужен в двух папках — положи
-  один и ссылайся.
+## Notes
 
-## Добавил — не забудь
+- Dependencies, gotchas, what to tweak per project.
+```
 
-1. Обновить `INDEX.md` (секция «Сниппеты»).
-2. Коммит: `feat(snippets): add <folder>/<name>`.
+---
+
+## Rules
+
+- A snippet is **small**. If it grew past 100 lines, it's a template — move
+  it to `templates/`.
+- Always state **where** to paste it — otherwise in a month it's unclear
+  why it exists.
+- Don't duplicate snippets across folders; if two places need one, keep a
+  single copy and link to it.
+
+## After adding one
+
+1. Update `INDEX.md` (Snippets section).
+2. Commit: `feat(snippets): add <folder>/<name>`.

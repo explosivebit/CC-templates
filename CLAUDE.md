@@ -1,95 +1,47 @@
-# CLAUDE.md — CC-templates
+# CLAUDE.md — CC-templates (archived)
 
-Репозиторий-библиотека личных наработок для Claude Code: гайды, скиллы, агенты,
-slash-команды, шаблоны промптов, сниппеты настроек. Цель — быстро подключать
-проверенные артефакты к новым проектам.
+> **This repo is archived.** It used to be the authoring lab for the
+> `fpl-skills` plugin. Active development continues in
+> [`ForgePlan/marketplace`](https://github.com/ForgePlan/marketplace) under
+> `plugins/fpl-skills/`. See `README.md` for the redirect.
 
----
+If you're starting a new Claude Code session and the goal is the
+fpl-skills plugin — `cd` to the marketplace repo instead, and read
+`plugins/fpl-skills/HANDOFF.md` for the current state and next steps:
 
-## 🔴 Красные линии
-
-- **Не перезаписывай чужие гайды** без явной просьбы — файлы в `guides/` считаются
-  стабильной базой знаний, правки — только через коммит с описанием причины.
-- **Не дублируй контент** между артефактами: один источник истины, в остальных —
-  ссылка. Дубли устаревают по-разному и вводят в заблуждение.
-- **Не клади сюда секреты** (`.env`, токены, ключи) — репозиторий рассчитан на
-  публикацию/шаринг.
-- **Не выполняй `install`-скрипты в чужой `~/.claude`** без подтверждения
-  пользователя — они копируют файлы в его домашнюю директорию.
+```
+cd ~/Work/Skills/forgeplan-marketplace
+git checkout feat/fpl-skills-plugin
+cat plugins/fpl-skills/HANDOFF.md
+```
 
 ---
 
-## Что это за проект
+## What's still here (don't touch unless intentional)
 
-Это **каталог переиспользуемых артефактов** для Claude Code. Здесь не живёт
-приложение — здесь живут:
+- `guides/` — Russian-language authored guides (CLAUDE-MD, GIT-FLOW). The
+  plugin bundles copies of these under
+  `plugins/fpl-skills/skills/bootstrap/resources/guides/` — so edits here
+  don't auto-propagate; if you want to update them, edit in both places
+  or sync.
+- `prompts/forgeplan-phase-5/`, `research/` — gitignored, personal
+  reference materials. Not republished.
+- `agents/`, `commands/`, `snippets/`, `templates/` — empty placeholder
+  folders (with READMEs documenting historical convention). Safe to
+  delete if you ever want to clean up.
 
-- `guides/` — длинные авторские гайды (markdown)
-- `skills/` — скиллы Claude Code (папки со `SKILL.md`)
-- `agents/` — агенты (`.md` с YAML frontmatter)
-- `commands/` — slash-команды (`.md` с frontmatter)
-- `prompts/` — шаблоны разовых промптов (по темам)
-- `templates/` — стартеры: готовые `CLAUDE.md`, `.claude/settings.json`, структура репо
-- `snippets/` — мелкие куски: hooks, permissions, regex, checklist-и
-- `scripts/` — вспомогательные скрипты (установка скиллов/агентов в `~/.claude`)
+## Why this repo still exists
 
-Полный индекс артефактов — в корневом `INDEX.md`. Правила оформления каждого
-типа — в `README.md` внутри соответствующей папки.
+- `git log` here is the authoring history of the plugin (14 commits).
+  The marketplace import is one squash commit on top of that history; if
+  you want to understand why a skill is shaped a certain way, this log
+  is where the answer is.
+- `guides/*.ru.md` aren't redistributable as plugin content (not in the
+  English plugin convention) but are useful personal references.
 
----
+## Red lines (still apply if you do edit)
 
-## Как работать в этом репозитории
-
-### Добавить новый артефакт
-
-1. Определи тип (скилл / агент / команда / промпт / темплейт / сниппет / гайд).
-2. Открой `README.md` в соответствующей папке — там шаблон и правила именования.
-3. Создай артефакт по шаблону. Имя файла/папки — `kebab-case`, на английском.
-4. Добавь одну строку в корневой `INDEX.md` в нужную секцию.
-5. Коммит по Conventional Commits (`feat(skills): add ...`).
-
-### Обновить существующий
-
-- Правь сам файл, обновляй его описание/frontmatter при изменении назначения.
-- Если меняется имя — переименуй файл **и** обнови `INDEX.md`.
-
-### Ссылаться на гайд внутри артефакта
-
-- Используй относительные пути от корня: `../../guides/CLAUDE-MD-GUIDE.ru.md`.
-- Не копируй фрагменты гайда внутрь скилла — только ссылка.
-
----
-
-## Конвенции
-
-- **Язык**: markdown-контент — по-русски (суффикс `.ru.md` для явно русскоязычных
-  авторских гайдов). Имена файлов, frontmatter-поля, названия артефактов — английский.
-- **Имена**: `kebab-case`. Примеры: `git-flow-guide`, `code-review-strict`,
-  `planning-prd`.
-- **Frontmatter**: у скиллов и агентов — YAML (`---` ... `---`) с обязательными
-  `name`, `description`. Описание должно объяснять *когда* его запускать, а не
-  *что* он делает.
-- **Размер**: артефакт — один файл/одна папка, одна цель. Если промпт вырастает
-  в гайд — переноси в `guides/`.
-
----
-
-## Git-процесс
-
-Работаем по правилам из `guides/GIT-FLOW-GUIDE.ru.md` — ветки `feature/*`,
-Conventional Commits, PR в `main` с обзором. Это авто-референс: **следуй гайду,
-не дублируй его содержимое здесь**.
-
-Деструктивные операции (`push --force`, `reset --hard`, удаление веток и т.д.) —
-только по явной просьбе пользователя.
-
----
-
-## Non-goals
-
-- Это **не** исполняемый проект: нет `package.json`, нет build-pipeline, нет CI
-  под сборку. CI, если появится, — только для lint markdown / проверки
-  frontmatter.
-- Это **не** замена `~/.claude/` пользователя — репозиторий является источником,
-  из которого артефакты копируются/симлинкуются в `~/.claude`.
-- Это **не** публичная документация Claude Code — это личная библиотека автора.
+- Don't recreate `skills/`, `.claude-plugin/`, `hooks/` here. Edit in
+  the marketplace.
+- Don't delete `guides/*.ru.md` — they're referenced from the plugin.
+- Don't rewrite git history pre-archive — the lineage is the point.

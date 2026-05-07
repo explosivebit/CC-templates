@@ -1,42 +1,29 @@
-# INDEX — карта всех артефактов
+# INDEX — archived
 
-Этот файл — «оглавление» репозитория. Добавляешь новый артефакт — добавляешь
-сюда одну строку в формате:
-`- [название](путь) — одна строка о сути и когда это брать`
+This repo is archived (see `README.md`). The catalog of skills now lives
+in the published plugin at
+[`ForgePlan/marketplace/plugins/fpl-skills/`](https://github.com/ForgePlan/marketplace/tree/main/plugins/fpl-skills).
 
-Держи строки до ~150 символов, списки отсортированы по алфавиту.
+## What was indexed here (historical)
 
----
+- **Guides** (`guides/`) — still present in this repo, also bundled in the
+  plugin's `skills/bootstrap/resources/guides/`:
+  - [CLAUDE-MD-GUIDE](guides/CLAUDE-MD-GUIDE.ru.md) — how to write
+    `CLAUDE.md` accounting for LLM weaknesses (U-curve, cry-wolf, dilution).
+  - [GIT-FLOW-GUIDE](guides/GIT-FLOW-GUIDE.ru.md) — Git Flow + Conventional
+    Commits + PR + SemVer + safety rules against AI destructiveness.
 
-## Гайды (`guides/`)
+- **Skills** (was `skills/`) — migrated to
+  `forgeplan-marketplace/plugins/fpl-skills/skills/`:
+  audit, autorun, bootstrap, briefing, build, diagnose, do, refine,
+  research, restore, rfc, setup, sprint, team.
 
-- [CLAUDE-MD-GUIDE](guides/CLAUDE-MD-GUIDE.ru.md) — как писать `CLAUDE.md` с учётом слабостей LLM (U-кривая, cry-wolf, dilution).
-- [GIT-FLOW-GUIDE](guides/GIT-FLOW-GUIDE.ru.md) — Git Flow + Conventional Commits + PR + SemVer + safety-правила против AI-деструкции.
+- **Plugin manifest, hooks, build script** — migrated to
+  `forgeplan-marketplace/plugins/fpl-skills/`.
 
-## Скиллы (`skills/`)
+- **Authored prompts** (`prompts/`) — gitignored; remained local.
 
-_Пока пусто. Шаблон и правила — `skills/README.md`._
+- **External research** (`research/`) — gitignored; remained local.
 
-## Агенты (`agents/`)
-
-_Пока пусто. Шаблон и правила — `agents/README.md`._
-
-## Slash-команды (`commands/`)
-
-_Пока пусто. Шаблон и правила — `commands/README.md`._
-
-## Промпты (`prompts/`)
-
-_Пока пусто. Шаблон и правила — `prompts/README.md`._
-
-## Темплейты (`templates/`)
-
-_Пока пусто. Шаблон и правила — `templates/README.md`._
-
-## Сниппеты (`snippets/`)
-
-_Пока пусто. Шаблон и правила — `snippets/README.md`._
-
-## Скрипты (`scripts/`)
-
-_Пока пусто. Назначение и соглашения — `scripts/README.md`._
+- **Scripts** (`scripts/`) — `install-skill.sh` for the old per-skill
+  install flow; obsolete now that everything ships as one plugin.

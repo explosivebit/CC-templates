@@ -1,64 +1,52 @@
-# CC-templates
+# CC-templates — archived
 
-Личная библиотека артефактов для Claude Code: гайды, скиллы, агенты,
-slash-команды, шаблоны промптов и настроек. Используется как «источник» —
-из него нужные вещи подключаются к новым проектам.
+> **This repo is archived.** It used to be the authoring lab for the
+> `fpl-skills` plugin. As of 2026-05-07 the plugin lives in
+> [`ForgePlan/marketplace`](https://github.com/ForgePlan/marketplace) under
+> `plugins/fpl-skills/`. Continue work there.
 
----
+## What used to be here
 
-## Быстрый старт
+Over 14 commits, this repo iterated on the skill set that became the
+fpl-skills plugin:
 
-```bash
-# 1. Клон / переход в каталог
-cd ~/Work/ExtraBoostLessons/CC-templates
+- 14 skills (research, refine, sprint, audit, diagnose, autorun, do,
+  build, briefing, restore, rfc, setup, bootstrap, team)
+- A universal CLAUDE.md template with stack detection
+- A SessionStart hook
+- The plugin manifest and a build/snapshot script
 
-# 2. Посмотреть, что есть
-cat INDEX.md
+The full history of those edits is in this repo's git log. Useful to
+read if you want to understand _why_ a particular skill is shaped the
+way it is — most decisions were made in PRs and chat in this lab, not
+in marketplace commit messages.
 
-# 3. Установить скилл в ~/.claude/skills/
-./scripts/install-skill.sh <skill-name>
+## What's still here
 
-# 4. Использовать промпт-шаблон — скопировать в новый проект
-cp prompts/<topic>/<name>.md <target-project>/
-```
+Personal notes that don't ship in the plugin:
 
-> Скрипты установки создаются по мере появления артефактов. Пока папки
-> пустые — используй `INDEX.md` как карту.
+- `guides/` — author's Russian-language guides (kept here, not
+  republished). Two of these are also bundled inside the plugin
+  (`bootstrap/resources/guides/CLAUDE-MD-GUIDE.ru.md`,
+  `GIT-FLOW-GUIDE.ru.md`).
+- `prompts/` — gitignored; personal one-off prompt drafts.
+- `research/` — gitignored; reference materials I gathered while
+  authoring the skills.
+- `commands/README.md` — historical note about the unification of skills
+  and slash commands in Claude Code 2026.
 
----
+## Where to go for everything else
 
-## Структура
+- **Source of truth for skills**: https://github.com/ForgePlan/marketplace/tree/main/plugins/fpl-skills
+- **forgeplan CLI**: https://github.com/ForgePlan/forgeplan
+- **Marketplace catalog**: https://github.com/ForgePlan/marketplace
+- **Install the plugin**: in Claude Code →
+  ```
+  /plugin marketplace add ForgePlan/marketplace
+  /plugin install fpl-skills@ForgePlan-marketplace
+  /reload-plugins
+  ```
 
-```
-CC-templates/
-├── CLAUDE.md          # как работать с этим репо (инструкция для Claude Code)
-├── README.md          # этот файл
-├── INDEX.md           # индекс всех артефактов
-├── guides/            # длинные авторские гайды (CLAUDE.md, Git Flow, …)
-├── skills/            # скиллы Claude Code (папка со SKILL.md)
-├── agents/            # агенты (.md с frontmatter)
-├── commands/          # slash-команды
-├── prompts/           # шаблоны разовых промптов по темам
-├── templates/         # стартеры: CLAUDE.md, settings.json, структура
-├── snippets/          # hooks, permissions, regex, checklist-и
-└── scripts/           # установка/симлинк в ~/.claude
-```
+## License
 
-У каждой подпапки есть свой `README.md` с правилами оформления и шаблоном
-нового артефакта.
-
----
-
-## Навигация
-
-- **Хочу посмотреть всё сразу** → `INDEX.md`
-- **Хочу добавить новый артефакт** → `CLAUDE.md` → раздел «Как работать»
-- **Хочу понять, как писать свой `CLAUDE.md`** → `guides/CLAUDE-MD-GUIDE.ru.md`
-- **Хочу процесс git/PR/релизов** → `guides/GIT-FLOW-GUIDE.ru.md`
-
----
-
-## Лицензия / шаринг
-
-Личная библиотека. Если делишь с кем-то — убедись, что в артефактах нет
-персональных данных, токенов и внутренних ссылок.
+MIT — same as the published plugin.

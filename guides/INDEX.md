@@ -1,6 +1,6 @@
 # guides/INDEX
 
-Локальный индекс гайдов. Глобальный индекс всего репо — в корневом `INDEX.md`.
+Local index of guides. The global index for the whole repo is in the root `INDEX.md`.
 
-- [CLAUDE-MD-GUIDE.ru.md](CLAUDE-MD-GUIDE.ru.md) — как писать `CLAUDE.md` с учётом слабостей LLM (U-кривая, cry-wolf, dilution, redundancy).
-- [GIT-FLOW-GUIDE.ru.md](GIT-FLOW-GUIDE.ru.md) — Git Flow + Conventional Commits + PR + SemVer + safety-правила против AI-деструкции.
+- [CLAUDE-MD-GUIDE.ru.md](CLAUDE-MD-GUIDE.ru.md) — how to write `CLAUDE.md` accounting for LLM weaknesses (U-curve, cry-wolf, dilution, redundancy).
+- [GIT-FLOW-GUIDE.ru.md](GIT-FLOW-GUIDE.ru.md) — Git Flow + Conventional Commits + PR + SemVer + safety rules against AI-driven destruction.

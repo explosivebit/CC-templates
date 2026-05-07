@@ -1,43 +1,44 @@
 # templates/
 
-Стартеры и boilerplate: готовые `CLAUDE.md`, `.claude/settings.json`, базовая
-структура проекта — всё, что удобно целиком скопировать в новый проект.
+Starters and boilerplate: ready-made `CLAUDE.md`, `.claude/settings.json`,
+basic project structure — anything convenient to copy wholesale into a
+new project.
 
-Организация — **по типу артефакта**:
+Layout — **by artifact type**:
 
 ```
 templates/
-├── claude-md/          # варианты CLAUDE.md под разные стеки
-├── settings/           # .claude/settings.json пресеты
-├── hooks/              # готовые hook-конфиги
-└── project-skeleton/   # полный скелет нового проекта
+├── claude-md/          # CLAUDE.md variants for different stacks
+├── settings/           # .claude/settings.json presets
+├── hooks/              # ready-made hook configs
+└── project-skeleton/   # full skeleton for a new project
 ```
 
 ---
 
-## Шаблон файла
+## File template
 
-Каждый темплейт сопровождается коротким `README.md` рядом:
+Each template ships with a short `README.md` alongside:
 
 ```markdown
 # <Template name>
 
-**Для чего**: тип проекта / сценарий.
-**Содержит**: список файлов.
-**Как применить**: команды для копирования + что править после.
+**For**: project type / scenario.
+**Contains**: list of files.
+**How to apply**: copy commands + what to edit afterward.
 ```
 
 ---
 
-## Правила
+## Rules
 
-- Темплейт должен быть **самодостаточным** — скопировал папку, получил
-  рабочий артефакт без ручного дособирания.
-- Плейсхолдеры — в явном виде: `<PROJECT_NAME>`, `<AUTHOR>`, чтобы `grep`-нуть
-  и заменить.
-- Не вшивай абсолютные пути и персональные данные.
+- A template must be **self-contained** — copy the folder, get a working
+  artifact without manual assembly.
+- Placeholders in plain form: `<PROJECT_NAME>`, `<AUTHOR>` — easy to grep
+  and replace.
+- Don't hardcode absolute paths or personal data.
 
-## Добавил — не забудь
+## After adding one
 
-1. Обновить `INDEX.md` (секция «Темплейты»).
-2. Коммит: `feat(templates): add <name>`.
+1. Update `INDEX.md` (Templates section).
+2. Commit: `feat(templates): add <name>`.

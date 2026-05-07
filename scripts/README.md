@@ -1,35 +1,35 @@
 # scripts/
 
-Вспомогательные скрипты для работы с библиотекой: установка скиллов/агентов
-в `~/.claude`, валидация frontmatter, генерация индекса.
+Helper scripts for working with the library: installing skills/agents into
+`~/.claude`, validating frontmatter, regenerating the index.
 
 ---
 
-## Планируемые скрипты
+## Planned scripts
 
-| Скрипт                    | Что делает                                            |
+| Script                    | What it does                                          |
 |---------------------------|-------------------------------------------------------|
-| `install-skill.sh <name>` | Копирует/симлинкует `skills/<name>` в `~/.claude/skills/`   |
-| `install-agent.sh <name>` | Копирует `agents/<name>.md` в `~/.claude/agents/`     |
-| `install-command.sh <n>`  | Копирует `commands/<name>.md` в `~/.claude/commands/` |
-| `lint-frontmatter.sh`     | Проверяет YAML frontmatter у всех `.md` в репо        |
-| `update-index.sh`         | Перегенерирует `INDEX.md` из актуального содержимого  |
+| `install-skill.sh <name>` | Copies/symlinks `skills/<name>` to `~/.claude/skills/`      |
+| `install-agent.sh <name>` | Copies `agents/<name>.md` to `~/.claude/agents/`      |
+| `install-command.sh <n>`  | Copies `commands/<name>.md` to `~/.claude/commands/`  |
+| `lint-frontmatter.sh`     | Validates YAML frontmatter across all `.md` in repo   |
+| `update-index.sh`         | Regenerates `INDEX.md` from current contents          |
 
-Создаются по мере необходимости. Пока не существуют — устанавливай руками
-по инструкциям из README в соответствующих папках.
+Created as needed. Until they exist, install by hand using the README
+instructions in each folder.
 
 ---
 
-## Правила
+## Rules
 
-- **Shell**: `bash`, с `set -euo pipefail` в начале.
-- **Идемпотентность**: повторный запуск не должен ломать состояние (проверяй
-  наличие файла перед копированием, используй `ln -sf`).
-- **Без деструктива по умолчанию**: если файл уже существует в цели —
-  спрашивай подтверждение или используй флаг `--force`.
-- **Сухой прогон**: флаг `--dry-run` для предпросмотра.
+- **Shell**: `bash`, with `set -euo pipefail` at the top.
+- **Idempotent**: re-running must not break state (check for the file
+  before copying, use `ln -sf`).
+- **No destruction by default**: if the target file already exists, prompt
+  for confirmation or require a `--force` flag.
+- **Dry run**: `--dry-run` flag for preview.
 
-## Шаблон скрипта
+## Script template
 
 ```bash
 #!/usr/bin/env bash
