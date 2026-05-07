@@ -11,16 +11,20 @@
 *.swo
 *~
 
-# Секреты — никогда не коммитим
+# Secrets — never commit
 .env
 .env.*
 *.key
 *.pem
 secrets/
 
-# Локальные переопределения Claude Code
+# Local Claude Code overrides
 .claude/settings.local.json
 
-# Временные файлы
+# Temporary files
 /tmp/
 *.log
+
+# Local working folders (not part of the public library)
+research/
+prompts/forgeplan-phase-5/
