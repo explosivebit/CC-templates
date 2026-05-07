@@ -87,7 +87,56 @@ Buy-in:
 Proceed? [y/n]
 ```
 
-### 3. Execute
+### 3. Detect stack (before rendering CLAUDE.md)
+
+Probe the project to fill the template's `{{VAR}}` placeholders and decide
+which `{{IF_*}}` blocks to keep. Run these in parallel and read the output:
+
+```bash
+test -f package.json    && cat package.json
+test -f Cargo.toml      && head -40 Cargo.toml
+test -f go.mod          && head -10 go.mod
+test -f pyproject.toml  && head -40 pyproject.toml
+test -f Gemfile         && head -10 Gemfile
+test -f Makefile        && grep -E '^[a-z_-]+:' Makefile | head -20
+ls package-lock.json yarn.lock pnpm-lock.yaml Cargo.lock go.sum poetry.lock 2>/dev/null
+test -f pnpm-workspace.yaml -o -d packages -o -d apps  &&  echo "monorepo-likely"
+test -f .pre-commit-config.yaml -o -d .husky  &&  echo "pre-commit-hook"
+```
+
+Map the results to placeholders:
+
+| Var | How to derive |
+|---|---|
+| `{{LANG}}` | "TypeScript" if `tsconfig.json` exists; "JavaScript" if only `package.json`; "Rust" if `Cargo.toml`; "Go" if `go.mod`; "Python" if `pyproject.toml`/`requirements.txt`; else "—" |
+| `{{PKG_MANAGER}}` | `pnpm` if `pnpm-lock.yaml`, `yarn` if `yarn.lock`, `npm` if only `package-lock.json`, `cargo`, `go`, `uv`/`poetry`/`pip` from `pyproject.toml`/lockfiles |
+| `{{TEST_FRAMEWORK}}` | from `package.json` devDeps (vitest/jest/mocha) / `pyproject.toml` (pytest) / `cargo test` / `go test` |
+| `{{INSTALL_CMD}}` | `pnpm i` / `yarn` / `npm i` / `cargo build` / `go mod download` / `uv sync` / `poetry install` |
+| `{{BUILD_CMD}}` | from `package.json` `scripts.build` / `cargo build` / `go build ./...` / project-specific |
+| `{{TEST_CMD}}` | from `scripts.test` / `cargo test` / `go test ./...` / `pytest` |
+| `{{LINT_CMD}}` | from `scripts.lint` / `cargo clippy` / `go vet ./...` / `ruff check` |
+| `{{LOCKFILE}}` | the actual lockfile path |
+| `{{WORKSPACE_TOOL}}` | "pnpm workspaces" / "yarn workspaces" / "cargo workspace" / "go workspaces" / project-specific |
+| `{{MIN_RUNTIME}}` | from `engines.node` / `rust-version` / `python_requires` |
+| `{{PUBLISH_CMD}}` | `pnpm changeset publish` / `cargo publish` / `npm publish` / `python -m build && twine upload` |
+
+Conditional blocks:
+
+| `{{IF_*}}` | Keep when |
+|---|---|
+| `IF_LANG_TS` | TypeScript or JavaScript detected |
+| `IF_LANG_RS` | Rust detected |
+| `IF_LANG_PY` | Python detected |
+| `IF_LANG_GO` | Go detected |
+| `IF_MONOREPO` | `apps/`, `packages/`, `pnpm-workspace.yaml`, `cargo workspace`, or `go.work` present |
+| `IF_PUBLIC_PACKAGE` | `package.json` has no `private: true`, OR `Cargo.toml` has `[package]` without `publish = false`, OR `pyproject.toml` declares `version` |
+| `IF_PRE_COMMIT_HOOK` | `.pre-commit-config.yaml`, `.husky/`, or `lefthook.yml` present |
+
+Anything you can't determine → leave the placeholder visible (`{{VAR}}`)
+with a comment line above: `<!-- /bootstrap: could not detect — fill manually -->`.
+This is **better than guessing** — the user fixes it once, never again.
+
+### 4. Render and write
 
 **Resolve the absolute path to resources.** Use:
 ```bash
@@ -97,10 +146,16 @@ test -d "$SKILL_DIR/resources" || SKILL_DIR="<absolute path to this skill in CC-
 
 If the skill was installed via symlink to `CC-templates/skills/bootstrap/`, `$HOME/.claude/skills/bootstrap` works. If the skill is invoked directly from the repo (no install) — use the absolute path to the directory containing this SKILL.md.
 
+**Render the template**: read `$SKILL_DIR/resources/templates/CLAUDE.md.template`,
+substitute every `{{VAR}}` from the table above, and for each `{{IF_X}}...{{/IF_X}}`
+block: keep the inner content if the condition is true, drop the whole block
+(including the markers) if false. Inline `{{IF_X}}...{{/IF_X}}` blocks (used
+inside lists for one-line additions) follow the same rule.
+
 **Run the operations for the chosen scenario:**
 
 - **CLAUDE.md:**
-  - File missing → `cp "$SKILL_DIR/resources/templates/CLAUDE.md.template" ./CLAUDE.md`, then replace the `<PROJECT_NAME>` placeholder with the project directory name (`basename "$PWD"`).
+  - File missing → write the rendered template to `./CLAUDE.md`, replacing `<PROJECT_NAME>` with `basename "$PWD"`.
   - File present and mode `append` → append the block:
     ```
     ## Reference
